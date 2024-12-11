@@ -8,7 +8,7 @@ import inspect
 from .node import Node
 
 
-def draw(node: "Node") -> None:
+def draw(node: Node) -> None:
     import networkx as nx
     from networkx.drawing.nx_pydot import graphviz_layout
 
