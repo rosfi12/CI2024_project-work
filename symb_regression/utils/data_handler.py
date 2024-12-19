@@ -29,7 +29,7 @@ def load_data(
         # Print statistics for each variable
         if x.ndim > 1:
             for i in range(x.shape[1]):
-                print(f"\nVariable x{i+1}:")
+                print(f"\nVariable x{i}:")
                 print(f"  Range: [{x[:,i].min():.3f}, {x[:,i].max():.3f}]")
                 print(f"  Mean: {x[:,i].mean():.3f}")
                 print(f"  Std: {x[:,i].std():.3f}")

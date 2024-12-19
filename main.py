@@ -3,19 +3,21 @@ import logging
 import os
 import time
 from logging import Logger
+from typing import List
 
 import numpy as np
 
 from symb_regression.config import GeneticParams
 from symb_regression.core import GeneticProgram
+from symb_regression.core.tree import Node
 from symb_regression.utils import (
     plot_evolution_metrics,
-    plot_expression_behavior,
     plot_prediction_analysis,
     plot_variable_importance,
 )
 from symb_regression.utils.data_handler import load_data
 from symb_regression.utils.logging_config import setup_logger
+from symb_regression.utils.metrics import Metrics
 
 
 def print_section_header(title: str, logger: Logger | None = None):
@@ -42,19 +44,19 @@ def run_symbolic_regression(
     y: np.ndarray,
     params: GeneticParams | None = None,
     debug: bool = False,
-):
-    logger = logging.getLogger("symb_regression")
+) -> tuple[Node, List[Metrics]]:
+    logger: Logger = logging.getLogger("symb_regression")
 
     if params is None:
         params = GeneticParams(
-            tournament_size=5,
-            mutation_prob=0.3,
+            tournament_size=100,
+            mutation_prob=0.4,
             crossover_prob=0.8,
-            elitism_count=2,
-            population_size=1000,  # Increased population size
-            generations=300,  # Reduced generations for testing
+            elitism_count=10,
+            population_size=1000,
+            generations=300,
             max_depth=5,
-            min_depth=3,
+            min_depth=1,
         )
 
     if debug:
@@ -65,20 +67,20 @@ def run_symbolic_regression(
     gp = GeneticProgram(params)
 
     logger.info("Starting evolution...")
-    start_time = time.time()
+    start_time = time.perf_counter()
 
     try:
         best_solution, history = gp.evolve(x, y)
 
-        end_time = time.time()
+        end_time = time.perf_counter()
         execution_time = end_time - start_time
 
         # Use print for better visibility of results
         print_section_header("SYMBOLIC REGRESSION RESULTS")
         print(f"Best Expression Found: {best_solution.to_pretty_string()}")
         print(f"Final Fitness: {gp.calculate_fitness(best_solution, x, y):g}")
-        print(f"Expression Size: {gp.count_nodes(best_solution)} nodes")
-        print(f"Expression Depth: {gp.get_depth(best_solution)} levels")
+        # print(f"Expression Size: {gp.count_nodes(best_solution)} nodes")
+        # print(f"Expression Depth: {gp.get_depth(best_solution)} levels")
         print(f"Execution Time: {execution_time:.2f} seconds")
         print(f"Generations: {len(history)}")
         print_section_footer()
@@ -86,10 +88,14 @@ def run_symbolic_regression(
         # Plot the evolution progress
         plot_evolution_metrics(history)
 
+        # FIXME operation value not shown in the expression tree
+        # from symb_regression.utils.plotting import plot_expression_tree
+
+        # plot_expression_tree(best_solution)
+
         print("\nAnalyzing solution...")
         mse, r2 = plot_prediction_analysis(best_solution, x, y)
-        plot_variable_importance(best_solution, x, y)
-        plot_expression_behavior(best_solution, x, y)
+        # plot_variable_importance(best_solution, x, y)
 
         print("Performance Metrics:")
         print(f"Mean Squared Error: {mse:.6f}")

@@ -1,6 +1,6 @@
 """Symbolic regression package for genetic programming."""
 
-from .base import INode, NodeType, get_nodes
+from .base import INode, NodeType
 from .config.settings import GeneticParams
 from .core.genetic_programming import GeneticProgram
 from .core.tree import Node
@@ -10,16 +10,14 @@ from .utils.logging_config import setup_logger
 from .utils.metrics import Metrics
 from .utils.plotting import (
     plot_evolution_metrics,
-    plot_expression_behavior,
     plot_operator_distribution,
     plot_prediction_analysis,
     plot_variable_importance,
 )
 
-__all__ = [
+__all__: list[str] = [
     "INode",
     "NodeType",
-    "get_nodes",
     "UNARY_OPS",
     "BINARY_OPS",
     "GeneticParams",
@@ -29,7 +27,6 @@ __all__ = [
     "load_data",
     "split_data",
     "plot_evolution_metrics",
-    "plot_expression_behavior",
     "plot_operator_distribution",
     "plot_prediction_analysis",
     "plot_variable_importance",

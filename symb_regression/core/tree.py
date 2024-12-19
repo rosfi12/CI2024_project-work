@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Iterator, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -27,12 +27,8 @@ class Node(INode):
             return UNARY_OPS[self.op][0](self.left.evaluate(x))
         if self.op in BINARY_OPS:
             if self.left is None or self.right is None:
-                raise ValueError(
-                    f"Binary operator {self.op} missing operand(s)"
-                )
-            return BINARY_OPS[self.op][0](
-                self.left.evaluate(x), self.right.evaluate(x)
-            )
+                raise ValueError(f"Binary operator {self.op} missing operand(s)")
+            return BINARY_OPS[self.op][0](self.left.evaluate(x), self.right.evaluate(x))
         raise ValueError(
             f"Invalid node configuration: op={self.op}, value={self.value}"
         )
@@ -86,3 +82,26 @@ class Node(INode):
         if self.op in BINARY_OPS:
             return self.left is not None and self.right is not None
         return False
+
+    def size(self) -> int:
+        """Count total number of nodes in this subtree."""
+        total = 1  # Count self
+        if self.left:
+            total += self.left.size()
+        if self.right:
+            total += self.right.size()
+        return total
+
+    def depth(self) -> int:
+        """Calculate maximum depth from this node."""
+        left_depth = self.left.depth() if self.left else -1
+        right_depth = self.right.depth() if self.right else -1
+        return 1 + max(left_depth, right_depth)
+
+    def nodes(self) -> Iterator["Node"]:
+        """Iterate over all nodes in this subtree."""
+        yield self
+        if self.left:
+            yield from self.left.nodes()
+        if self.right:
+            yield from self.right.nodes()

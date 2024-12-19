@@ -1,7 +1,9 @@
 from typing import Any, List, Tuple
 
 import matplotlib.pyplot as plt
+import networkx as nx
 import numpy as np
+from matplotlib.axes import Axes
 
 from symb_regression.core.tree import Node
 
@@ -83,7 +85,7 @@ def plot_evolution_metrics(metrics_history: List[Any]) -> None:
     plt.show()
 
 
-def plot_operator_distribution(ax: plt.Axes, operator_dist: dict) -> None:
+def plot_operator_distribution(ax: Axes, operator_dist: dict) -> None:
     """Plot operator distribution on given axes."""
     ops = list(operator_dist.keys())
     frequencies = list(operator_dist.values())
@@ -103,7 +105,7 @@ def plot_operator_distribution(ax: plt.Axes, operator_dist: dict) -> None:
         frequencies = [frequencies[i] for i in sorted_indices]
 
     # Create color scheme
-    colors = plt.cm.Set3(np.linspace(0, 1, len(ops)))
+    colors = plt.cm.Set3(np.linspace(0, 1, len(ops)))  # type: ignore
     if "Others" in ops:
         colors[-1] = (0.7, 0.7, 0.7, 1.0)
 
@@ -165,8 +167,8 @@ def plot_prediction_analysis(
     ax1.scatter(y, y_pred, alpha=0.5, label="Predictions")
 
     # Plot perfect prediction line
-    min_val = min(min(y), min(y_pred))
-    max_val = max(max(y), max(y_pred))
+    min_val = np.min((np.min(y), np.min(y_pred)))
+    max_val = np.max((np.max(y), np.max(y_pred)))
     ax1.plot(
         [min_val, max_val],
         [min_val, max_val],
@@ -334,55 +336,79 @@ def visualize_expression_behavior(
     plt.show()
 
 
-def plot_expression_behavior(
-    expression: Node, x: np.ndarray, y: np.ndarray, n_points: int = 100
-) -> None:
-    """Plot expression behavior for each variable."""
-    n_vars = x.shape[1] if x.ndim > 1 else 1
-    fig, axes = plt.subplots(1, n_vars, figsize=(6 * n_vars, 5))
-    if n_vars == 1:
-        axes = [axes]
+def plot_expression_tree(root_node: Node) -> None:
+    import matplotlib.pyplot as plt
+    from networkx.drawing.nx_pydot import graphviz_layout
 
-    for i, ax in enumerate(axes):
-        _plot_single_variable_behavior(expression, x, y, i, n_points, ax)
+    G = nx.DiGraph()
+    nodes_list: list[Node] = []
 
-    plt.suptitle(f"Expression: {expression.to_pretty_string()}")
-    plt.tight_layout()
+    def collect_nodes(node, parent_id=None):
+        current_id = id(node)
+        nodes_list.append(node)
+
+        if parent_id is not None:
+            G.add_edge(parent_id, current_id)
+
+        if node.left:
+            collect_nodes(node.left, current_id)
+        if node.right:
+            collect_nodes(node.right, current_id)
+
+    collect_nodes(root_node)
+
+    pos = graphviz_layout(G, prog="dot")
+
+    # Draw operator nodes
+    operator_nodes = [
+        id(n)
+        for n in nodes_list
+        if isinstance(n.value, str) and n.value in ["+", "-", "*", "/"]
+    ]
+    nx.draw_networkx_nodes(
+        G,
+        pos,
+        nodelist=operator_nodes,
+        node_size=800,
+        node_color="lightpink",
+        node_shape="o",
+    )
+
+    # Draw variable nodes
+    variable_nodes = [
+        id(n)
+        for n in nodes_list
+        if isinstance(n.value, str) and n.value.startswith("x")
+    ]
+    nx.draw_networkx_nodes(
+        G,
+        pos,
+        nodelist=variable_nodes,
+        node_size=500,
+        node_color="lightgreen",
+        node_shape="s",
+    )
+
+    # Draw constant nodes
+    constant_nodes = [id(n) for n in nodes_list if isinstance(n.value, (int, float))]
+    nx.draw_networkx_nodes(
+        G,
+        pos,
+        nodelist=constant_nodes,
+        node_size=500,
+        node_color="lightblue",
+        node_shape="s",
+    )
+
+    # Add labels
+    labels = {
+        id(n): str(n.value) if isinstance(n.value, (int, float)) else n.value
+        for n in nodes_list
+    }
+    nx.draw_networkx_labels(G, pos, labels)
+
+    # Draw edges
+    nx.draw_networkx_edges(G, pos)
+
+    plt.axis("off")
     plt.show()
-
-
-def _plot_single_variable_behavior(
-    expression: Node,
-    x: np.ndarray,
-    y: np.ndarray,
-    variable_idx: int,
-    n_points: int,
-    ax: plt.Axes
-) -> None:
-    """Plot expression behavior for a single variable."""
-    if x.ndim > 1:
-        x_var = x[:, variable_idx]
-    else:
-        x_var = x
-
-    # Create range of values
-    x_range = np.linspace(np.min(x_var), np.max(x_var), n_points)
-
-    # Create input data
-    if x.ndim > 1:
-        x_pred = np.tile(np.mean(x, axis=0), (n_points, 1))
-        x_pred[:, variable_idx] = x_range
-    else:
-        x_pred = x_range
-
-    # Calculate predictions
-    y_pred = expression.evaluate(x_pred)
-
-    # Plot
-    ax.scatter(x_var, y, alpha=0.5, label="Actual Data", color="blue")
-    ax.plot(x_range, y_pred, "r-", label="Expression", linewidth=2)
-    ax.set_xlabel(f"Variable x{variable_idx}")
-    ax.set_ylabel("Output")
-    ax.set_title(f"Variable x{variable_idx} Behavior")
-    ax.legend()
-    ax.grid(True)
