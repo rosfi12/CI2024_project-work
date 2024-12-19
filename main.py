@@ -13,7 +13,6 @@ from symb_regression.core.tree import Node
 from symb_regression.utils import (
     plot_evolution_metrics,
     plot_prediction_analysis,
-    plot_variable_importance,
 )
 from symb_regression.utils.data_handler import load_data
 from symb_regression.utils.logging_config import setup_logger
@@ -49,10 +48,10 @@ def run_symbolic_regression(
 
     if params is None:
         params = GeneticParams(
-            tournament_size=100,
+            tournament_size=7,
             mutation_prob=0.4,
             crossover_prob=0.8,
-            elitism_count=10,
+            elitism_count=5,
             population_size=1000,
             generations=300,
             max_depth=5,
