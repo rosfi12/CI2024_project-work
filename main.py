@@ -10,9 +10,10 @@ import numpy as np
 from symb_regression.config import GeneticParams
 from symb_regression.core import GeneticProgram
 from symb_regression.core.tree import Node
-from symb_regression.utils import (
+from symb_regression.utils.plotting import (
     plot_evolution_metrics,
     plot_prediction_analysis,
+    plot_expression_tree
 )
 from symb_regression.utils.data_handler import load_data
 from symb_regression.utils.logging_config import setup_logger
@@ -90,7 +91,8 @@ def run_symbolic_regression(
         # FIXME operation value not shown in the expression tree
         # from symb_regression.utils.plotting import plot_expression_tree
 
-        # plot_expression_tree(best_solution)
+        print(best_solution)
+        plot_expression_tree(best_solution)
 
         print("\nAnalyzing solution...")
         mse, r2 = plot_prediction_analysis(best_solution, x, y)
