@@ -9,21 +9,7 @@ from .plotting import (
     plot_prediction_analysis,
     plot_variable_importance,
 )
-
-
-def set_global_seed(seed: int) -> None:
-    """Set global random seed for reproducibility.
-
-    Args:
-        seed (int): The seed value to use
-    """
-    import random
-
-    import numpy as np
-
-    random.seed(seed)
-    np.random.seed(seed)
-
+from .random import set_global_seed
 
 __all__: list[str] = [
     "load_data",

@@ -1,4 +1,3 @@
-from .crossover import crossover
-from .mutation import mutate
+from .definitions import BINARY_OPS, OPERATOR_PRECEDENCE, UNARY_OPS
 
-__all__: list[str] = ["crossover", "mutate"]
+__all__: list[str] = ["BINARY_OPS", "UNARY_OPS", "OPERATOR_PRECEDENCE"]

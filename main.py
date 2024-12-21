@@ -7,16 +7,14 @@ from typing import List
 
 import numpy as np
 
+from symb_regression import GeneticProgram, set_global_seed
 from symb_regression.config import GeneticParams
-from symb_regression.core import GeneticProgram
 from symb_regression.core.tree import Node
-from symb_regression.utils import (
-    plot_evolution_metrics,
-    plot_prediction_analysis,
-)
 from symb_regression.utils.data_handler import load_data
 from symb_regression.utils.logging_config import setup_logger
 from symb_regression.utils.metrics import Metrics
+
+# set_global_seed(42)
 
 
 def print_section_header(title: str, logger: Logger | None = None):
@@ -53,7 +51,7 @@ def run_symbolic_regression(
             crossover_prob=0.8,
             elitism_count=5,
             population_size=1000,
-            generations=300,
+            generations=350,
             max_depth=5,
             min_depth=1,
         )
@@ -76,7 +74,7 @@ def run_symbolic_regression(
 
         # Use print for better visibility of results
         print_section_header("SYMBOLIC REGRESSION RESULTS")
-        print(f"Best Expression Found: {best_solution.to_pretty_string()}")
+        print(f"Best Expression Found: {best_solution}")
         print(f"Final Fitness: {gp.calculate_fitness(best_solution, x, y):g}")
         # print(f"Expression Size: {gp.count_nodes(best_solution)} nodes")
         # print(f"Expression Depth: {gp.get_depth(best_solution)} levels")
@@ -85,7 +83,7 @@ def run_symbolic_regression(
         print_section_footer()
 
         # Plot the evolution progress
-        plot_evolution_metrics(history)
+        # plot_evolution_metrics(history)
 
         # FIXME operation value not shown in the expression tree
         # from symb_regression.utils.plotting import plot_expression_tree
@@ -93,12 +91,12 @@ def run_symbolic_regression(
         # plot_expression_tree(best_solution)
 
         print("\nAnalyzing solution...")
-        mse, r2 = plot_prediction_analysis(best_solution, x, y)
+        # mse, r2 = plot_prediction_analysis(best_solution, x, y)
         # plot_variable_importance(best_solution, x, y)
 
         print("Performance Metrics:")
-        print(f"Mean Squared Error: {mse:.6f}")
-        print(f"R² Score: {r2:.6f} ({r2*100:.1f}% of variance explained)")
+        # print(f"Mean Squared Error: {mse:.6f}")
+        # print(f"R² Score: {r2:.6f} ({r2*100:.1f}% of variance explained)")
 
         return best_solution, history
 

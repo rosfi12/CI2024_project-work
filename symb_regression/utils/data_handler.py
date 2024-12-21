@@ -68,16 +68,16 @@ def split_data(
     Returns:
         Tuple containing (x_train, x_val, y_train, y_val)
     """
-    n = len(x)
+    n: int = len(x)
     # Check if features are in columns and transform if needed
     if x.ndim == 2 and x.shape[1] < x.shape[0]:
         x = x.T
     idx = np.random.permutation(n)
     train_size = int(n * train_ratio)
 
-    x_train = x[idx[:train_size]]
-    x_val = x[idx[train_size:]]
-    y_train = y[idx[:train_size]]
-    y_val = y[idx[train_size:]]
+    x_train: npt.NDArray[np.float64] = x[idx[:train_size]]
+    x_val: npt.NDArray[np.float64] = x[idx[train_size:]]
+    y_train: npt.NDArray[np.float64] = y[idx[:train_size]]
+    y_val: npt.NDArray[np.float64] = y[idx[train_size:]]
 
     return x_train, x_val, y_train, y_val
