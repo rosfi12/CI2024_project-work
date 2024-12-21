@@ -10,7 +10,22 @@ from .plotting import (
     plot_variable_importance,
 )
 
-__all__ = [
+
+def set_global_seed(seed: int) -> None:
+    """Set global random seed for reproducibility.
+
+    Args:
+        seed (int): The seed value to use
+    """
+    import random
+
+    import numpy as np
+
+    random.seed(seed)
+    np.random.seed(seed)
+
+
+__all__: list[str] = [
     "load_data",
     "split_data",
     "setup_logger",
@@ -19,4 +34,5 @@ __all__ = [
     "plot_operator_distribution",
     "plot_prediction_analysis",
     "plot_variable_importance",
+    "set_global_seed",
 ]

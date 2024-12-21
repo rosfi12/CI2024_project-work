@@ -1,6 +1,5 @@
 """Symbolic regression package for genetic programming."""
 
-from .base import INode, NodeType
 from .config.settings import GeneticParams
 from .core.genetic_programming import GeneticProgram
 from .core.tree import Node
@@ -16,8 +15,6 @@ from .utils.plotting import (
 )
 
 __all__: list[str] = [
-    "INode",
-    "NodeType",
     "UNARY_OPS",
     "BINARY_OPS",
     "GeneticParams",

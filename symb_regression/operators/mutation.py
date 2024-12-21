@@ -3,15 +3,21 @@ import random
 from typing_extensions import Dict
 
 from symb_regression.base import NodeType
-from symb_regression.operators.definitions import BINARY_OPS, UNARY_OPS
+from symb_regression.operators.definitions import (
+    BINARY_OPS,
+    UNARY_OPS,
+)
+
+VARIABLE_PROBABILITY: float = 0.7
+VALUE_STEP_FACTOR: float = 0.1
 
 
 def create_random_tree(
     depth: int,
     max_depth: int,
     n_variables: int,
-    unary_weights: Dict[str, float] = None,
-    binary_weights: Dict[str, float] = None,
+    unary_weights: Dict[str, float] | None = None,
+    binary_weights: Dict[str, float] | None = None,
 ) -> NodeType:
     from symb_regression.core.tree import Node
     from symb_regression.operators.definitions import get_var_name
@@ -48,7 +54,7 @@ def create_random_tree(
 
     # At maximum depth, prefer variables over constants
     if depth >= max_depth:
-        if random.random() < 0.7:  # 70% chance for variable
+        if random.random() < VARIABLE_PROBABILITY:  # 70% chance for variable
             var_idx = random.randint(1, n_variables)
             return Node(op=get_var_name(var_idx))
         else:
@@ -81,7 +87,7 @@ def create_random_tree(
             )
         return node
     else:  # 20% chance for terminal
-        if random.random() < 0.7:  # Higher chance for variable
+        if random.random() < VARIABLE_PROBABILITY:  # Higher chance for variable
             var_idx = random.randint(1, n_variables)
             return Node(op=get_var_name(var_idx))
         else:
@@ -127,7 +133,11 @@ def mutate(
 
         elif mutation_type == "constant":
             if node.value is not None:
-                step = abs(node.value) * 0.1 if node.value != 0 else 0.1
+                step = (
+                    abs(node.value) * VALUE_STEP_FACTOR
+                    if node.value != 0
+                    else VALUE_STEP_FACTOR
+                )
                 node.value += random.gauss(0, step)
 
         elif mutation_type == "simplify":
@@ -145,7 +155,7 @@ def mutate(
     if node.left:
         node.left = mutate(
             node.left,
-            mutation_prob * 0.7,
+            mutation_prob * VARIABLE_PROBABILITY,
             max_depth,
             n_variables,
             unary_weights,
@@ -154,7 +164,7 @@ def mutate(
     if node.right:
         node.right = mutate(
             node.right,
-            mutation_prob * 0.7,
+            mutation_prob * VARIABLE_PROBABILITY,
             max_depth,
             n_variables,
             unary_weights,

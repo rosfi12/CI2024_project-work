@@ -7,7 +7,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
-from tqdm import tqdm
+from tqdm.rich import tqdm
 
 from symb_regression.config.settings import GeneticParams
 from symb_regression.core.tree import Node
@@ -139,7 +139,7 @@ class GeneticProgram:
         indices = np.array(
             random.sample(range(len(self.population)), self.params.tournament_size)
         )
-        tournament_scores = np.array(scores)[indices]
+        tournament_scores: npt.NDArray[np.float64] = np.array(scores)[indices]
         winner_idx = indices[np.argmax(tournament_scores)]
         return self.population[winner_idx]
 
@@ -167,6 +167,7 @@ class GeneticProgram:
             except Exception as e:
                 logger.debug(f"Error creating tree: {e}")
                 continue
+            logger.debug(f"Current population size: {len(self.population)}")
         logger.debug(f"Initial population size: {len(self.population)}")
 
     def _evaluate_population(
@@ -323,29 +324,29 @@ class GeneticProgram:
         eval_time: float,
     ) -> None:
         # Fitness statistics
-        fitness_array = np.array(scores)
-        best_fitness = np.max(fitness_array)
-        avg_fitness = np.mean(fitness_array, dtype=np.float64)
-        worst_fitness = np.min(fitness_array)
-        fitness_std = np.std(fitness_array, dtype=np.float64)
+        fitness_array: npt.NDArray[np.float64] = np.array(scores)
+        best_fitness: np.float64 = np.max(fitness_array)
+        avg_fitness: np.float64 = np.mean(fitness_array, dtype=np.float64)
+        worst_fitness: np.float64 = np.min(fitness_array)
+        fitness_std: np.float64 = np.std(fitness_array, dtype=np.float64)
 
         # Tree statistics
-        tree_sizes = [tree.size() for tree in self.population]
-        tree_depths = [tree.depth() for tree in self.population]
-        avg_tree_size = np.mean(tree_sizes, dtype=np.float64)
-        avg_tree_depth = np.mean(tree_depths, dtype=np.float64)
-        min_tree_size = min(tree_sizes)
-        max_tree_size = max(tree_sizes)
+        tree_sizes: List[int] = [tree.size() for tree in self.population]
+        tree_depths: List[int] = [tree.depth() for tree in self.population]
+        avg_tree_size: np.float64 = np.mean(tree_sizes, dtype=np.float64)
+        avg_tree_depth: np.float64 = np.mean(tree_depths, dtype=np.float64)
+        min_tree_size: int = min(tree_sizes)
+        max_tree_size: int = max(tree_sizes)
 
         # Population diversity
         unique_expressions = len(set(str(tree) for tree in self.population))
         population_diversity = unique_expressions / len(self.population)
 
         # Operator distribution
-        operator_counts = {}
+        operator_counts: dict[str, int] = {}
         for tree in self.population:
             for node in tree.nodes():
-                op_type = type(node).__name__
+                op_type: str = type(node).__name__
                 operator_counts[op_type] = operator_counts.get(op_type, 0) + 1
         total_nodes = sum(operator_counts.values())
         operator_distribution = {
