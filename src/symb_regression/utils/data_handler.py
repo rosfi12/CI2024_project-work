@@ -51,7 +51,7 @@ def load_data(
 def split_data(
     x: npt.NDArray[np.float64],
     y: npt.NDArray[np.float64],
-    train_ratio: float = 0.8,
+    train_size: float = 0.8,
 ) -> Tuple[
     npt.NDArray[np.float64],
     npt.NDArray[np.float64],
@@ -69,16 +69,37 @@ def split_data(
     Returns:
         Tuple containing (x_train, x_val, y_train, y_val)
     """
-    n: int = len(x)
-    # Check if features are in columns and transform if needed
-    if x.ndim == 2 and x.shape[1] < x.shape[0]:
-        x = x.T
-    idx = np.random.permutation(n)
-    train_size = int(n * train_ratio)
+    # Input validation
+    if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
+        raise TypeError("Input x and y must be numpy arrays")
 
-    x_train: npt.NDArray[np.float64] = x[idx[:train_size]]
-    x_val: npt.NDArray[np.float64] = x[idx[train_size:]]
-    y_train: npt.NDArray[np.float64] = y[idx[:train_size]]
-    y_val: npt.NDArray[np.float64] = y[idx[train_size:]]
+    if train_size <= 0 or train_size >= 1:
+        raise ValueError("train_ratio must be between 0 and 1")
+
+    # Handle different input shapes
+    if x.ndim == 1:
+        x = x.reshape(-1, 1)
+    elif x.ndim == 2 and x.shape[0] < x.shape[1]:
+        x = x.T
+
+    n_samples = x.shape[0]
+
+    if len(y.shape) == 1:
+        y = y.reshape(-1, 1)
+
+    if x.shape[0] != y.shape[0]:
+        raise ValueError(
+            f"x and y must have same number of samples. Got x: {x.shape[0]}, y: {y.shape[0]}"
+        )
+
+    # Create random permutation
+    idx = np.random.permutation(n_samples)
+    train_size = int(n_samples * train_size)
+
+    # Split the data
+    x_train = x[idx[:train_size]]
+    x_val = x[idx[train_size:]]
+    y_train = y[idx[:train_size]]
+    y_val = y[idx[train_size:]]
 
     return x_train, x_val, y_train, y_val

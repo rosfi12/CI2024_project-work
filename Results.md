@@ -38,6 +38,32 @@ Performance Metrics:
 Mean Squared Error: 97.311628
 R² Score: 0.962010 (96.2% of variance explained)
 
+==================================================
+==== SYMBOLIC REGRESSION RESULTS - problem_3 =====
+==================================================
+Best Expression Found: (min(log(x1), x1) / -0.053)
+Final Fitness: 0.481282
+Execution Time: 21.36 seconds
+Generations: 300
+==================================================
+Performance Metrics:
+Mean Squared Error: 0.680982
+R² Score: 817.175715 (81717.6% of variance explained)
+==================================================
+
+==================================================
+==== SYMBOLIC REGRESSION RESULTS - problem_3 =====
+==================================================
+Best Expression Found: sinh((log(3.354) - max(-4.169, x1)))
+Final Fitness: 0.459903
+Execution Time: 95.22 seconds
+Generations: 300
+==================================================
+Performance Metrics:
+Mean Squared Error: 0.648618
+R² Score: 900.078441 (90007.8% of variance explained)
+==================================================
+
 # Problem_4
 Best Expression Found: 
 sinh(exp(cos(sin(sin(x1)) - x0 min x1 max x1)))
@@ -58,6 +84,19 @@ Performance Metrics:
 Mean Squared Error: 0.000000
 R² Score: -0.064122 (-6.4% of variance explained)
 
+==================================================
+==== SYMBOLIC REGRESSION RESULTS - problem_5 =====
+==================================================
+Best Expression Found: 0.000
+Final Fitness: 0.299401
+Execution Time: 10.44 seconds
+Generations: 300
+==================================================
+Performance Metrics:
+Mean Squared Error: -0.064122
+R² Score: 0.000000 (0.0% of variance explained)
+==================================================
+
 # Problem_6
 Best Expression Found: 
 x1 - sin(sin(arcsin(x1))) + x1 - x0 * x0 max arcsin(x0) / (x0 + abs(sqrt(x0)))
@@ -68,15 +107,18 @@ Performance Metrics:
 Mean Squared Error: 0.136914
 R² Score: 0.989969 (99.0% of variance explained)
 
-# Problem_7
-Best Expression Found: 
-exp(arcsin(cos(x1 abs_diff x0)) * sqrt(arcsin(exp(x1) * x1 // x1) * (cos(x0) max x0 + x1 + x0 + x1)) max x1 * sqrt(x0) % arcsin(x1) max x0 max arcsin(reciprocal(sqrt(x0))) - x0 max x1)
-Final Fitness: 0.0100248
-Execution Time: 239.96 seconds
+==================================================
+==== SYMBOLIC REGRESSION RESULTS - problem_7 =====
+==================================================
+Best Expression Found: (4.531 * exp((x0 * x1)))
+Final Fitness: 0.388126
+Execution Time: 24.78 seconds
 Generations: 300
+==================================================
 Performance Metrics:
-Mean Squared Error: 98.707621
-R² Score: 0.861201 (86.1% of variance explained)
+Mean Squared Error: 0.535917
+R² Score: 330.034956 (33003.5% of variance explained)
+==================================================
 
 # Problem_8
 Best Expression Found: 

@@ -222,6 +222,15 @@ def safe_tan(x: npt.NDArray[FLOAT_PRECISION]) -> npt.NDArray[FLOAT_PRECISION]:
     return np.tan(clipped)
 
 
+def safe_atan2(
+    x1_clipped: npt.NDArray[FLOAT_PRECISION], x2: npt.NDArray[FLOAT_PRECISION]
+) -> npt.NDArray[FLOAT_PRECISION]:
+    """Safe tangent function with clipping"""
+    x1_clipped = np.clip(x1_clipped, -np.pi + 1e-10, np.pi - 1e-10)
+    x2_clipped = np.clip(x2, -np.pi + 1e-10, np.pi - 1e-10)
+    return np.atan2(x1_clipped, x2_clipped)
+
+
 def safe_arcsin(x: npt.NDArray[FLOAT_PRECISION]) -> npt.NDArray[FLOAT_PRECISION]:
     """Safe arcsine function with clipping"""
     clipped = np.clip(x, -1, 1)
@@ -257,6 +266,23 @@ BASE_OPERATORS: Dict[str, OperatorSpec] = {
         precedence=4,
         is_unary=True,
     ),
+    "atan2": OperatorSpec(
+        function=safe_atan2,
+        precedence=4,
+        is_unary=False,
+    ),
+    "cot": OperatorSpec(
+        function=lambda x: np.clip(
+            1 / np.tan(np.where(np.abs(x) < MIN_FLOAT, MIN_FLOAT, x)),
+            -MAX_FLOAT,
+            MAX_FLOAT,
+        ),
+        precedence=4,
+        is_unary=True,
+        representation=OperatorRepresentation(
+            style=RepresentationStyle.FUNCTION, symbol="cot"
+        ),
+    ),
     "arcsin": OperatorSpec(
         function=safe_arcsin,
         precedence=4,
@@ -282,6 +308,11 @@ BASE_OPERATORS: Dict[str, OperatorSpec] = {
         precedence=4,
         is_unary=True,
     ),
+    "log2": OperatorSpec(
+        function=lambda x: np.log2(np.abs(x) + MIN_FLOAT),
+        precedence=4,
+        is_unary=True,
+    ),
     "sqrt": OperatorSpec(
         function=lambda x: np.sqrt(np.maximum(0, x)),
         precedence=4,
@@ -297,11 +328,11 @@ BASE_OPERATORS: Dict[str, OperatorSpec] = {
         precedence=4,
         is_unary=True,
     ),
-    "sigmoid": OperatorSpec(
-        function=lambda x: 1 / (1 + np.exp(np.clip(-x, -MAX_EXP, MAX_EXP))),
-        precedence=4,
-        is_unary=True,
-    ),
+    # "sigmoid": OperatorSpec(
+    #     function=lambda x: 1 / (1 + np.exp(np.clip(-x, -MAX_EXP, MAX_EXP))),
+    #     precedence=4,
+    #     is_unary=True,
+    # ),
     "reciprocal": OperatorSpec(
         function=lambda x: np.divide(1, np.where(np.abs(x) < MIN_FLOAT, MIN_FLOAT, x)),
         precedence=4,

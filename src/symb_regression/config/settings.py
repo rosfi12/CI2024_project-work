@@ -18,8 +18,13 @@ class GeneticParams:
     generations: int = 100
 
     # Tree constraints
-    max_depth: int = 6
-    min_depth: int = 2
+    maximum_tree_depth: int = 6
+    minimum_tree_depth: int = 2
+    max_tree_size: int = 100
+
+    parsimony_coefficient: float = 0.1  # Controls size penalty weight
+    depth_penalty_threshold: int = 5  # Depth at which penalties start
+    size_penalty_threshold: int = 50  # Size at which penalties start
 
     def __post_init__(self) -> None:
         # Validate parameters
@@ -31,8 +36,14 @@ class GeneticParams:
             raise ValueError("Mutation probability must be between 0 and 1")
         if not (0 <= self.crossover_prob <= 1):
             raise ValueError("Crossover probability must be between 0 and 1")
-        if self.min_depth > self.max_depth:
+        if self.minimum_tree_depth > self.maximum_tree_depth:
             raise ValueError("Minimum depth cannot exceed maximum depth")
+        if not (0 <= self.parsimony_coefficient <= 1):
+            raise ValueError("Parsimony coefficient must be between 0 and 1")
+        if self.depth_penalty_threshold > self.maximum_tree_depth:
+            raise ValueError("Depth penalty threshold cannot exceed maximum depth")
+        if self.size_penalty_threshold > self.max_tree_size:
+            raise ValueError("Size penalty threshold cannot exceed maximum tree size")
 
 
 class MutationType(Enum):

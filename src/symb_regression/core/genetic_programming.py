@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
-from tqdm.rich import tqdm
+from tqdm import tqdm
 from tqdm.std import TqdmExperimentalWarning
 
 from symb_regression.config.settings import GeneticParams
@@ -76,11 +76,16 @@ class GeneticProgram:
                 if len(indices) > 2:  # Keep at most 2 of each structure
                     for idx in indices[2:]:
                         self.population[idx] = self.create_random_tree(
-                            random.randint(self.params.min_depth, self.params.max_depth)
+                            random.randint(
+                                self.params.minimum_tree_depth,
+                                self.params.maximum_tree_depth,
+                            )
                         )
 
     def create_random_tree(self, depth: int) -> Node:
-        return create_random_tree(depth, self.params.max_depth, self.config.n_variables)
+        return create_random_tree(
+            depth, self.params.maximum_tree_depth, self.config.n_variables
+        )
 
     def mutate(self, node: Node) -> Node:
         # Create default weights if no history yet
@@ -90,7 +95,7 @@ class GeneticProgram:
         return mutate(
             node=node,
             mutation_prob=self.params.mutation_prob,
-            max_depth=self.params.max_depth,
+            max_depth=self.params.maximum_tree_depth,
             n_variables=self.config.n_variables,
             unary_weights=unary_weights,
             binary_weights=binary_weights,
@@ -104,26 +109,60 @@ class GeneticProgram:
             if np.any(np.isnan(pred)) or np.any(np.isinf(pred)):
                 return np.float64(-np.inf)
 
+            # Accuracy metrics with improved scaling
             mse: np.float64 = np.mean((pred - y) ** 2).astype(np.float64)
+            rmse: np.float64 = np.sqrt(mse)
 
-            # Count unique variables used
-            used_vars: set[str] = {
-                node.op for node in tree if node.op and node.op.startswith("x")
-            }
+            # R² calculation with bounds
+            y_mean = np.mean(y)
+            ss_tot = np.sum((y - y_mean) ** 2)
+            ss_res = np.sum((y - pred) ** 2)
+            r2: np.float64 = np.maximum(0, 1 - (ss_res / ss_tot))
 
-            # Penalize not using all variables
-            var_penalty: float = 0.5 * (self.config.n_variables - len(used_vars))
+            # Tree complexity metrics
+            tree_size = len(tree)
+            depth = tree.depth()
 
-            # Other penalties
-            complexity_penalty = (
-                0.001 * len(tree) if tree.op or tree.value is None else 1.0
-            )
+            # Size penalty using configured thresholds
+            if tree_size > self.params.size_penalty_threshold:
+                size_penalty = (
+                    np.exp(
+                        (tree_size - self.params.size_penalty_threshold)
+                        / self.params.max_tree_size
+                    )
+                    - 1
+                )
+            else:
+                size_penalty = 0
 
-            if len(tree) < 3:
-                complexity_penalty += 0.5
+            # Depth penalty using configured thresholds
+            if depth > self.params.depth_penalty_threshold:
+                depth_penalty = (
+                    np.exp(
+                        (depth - self.params.depth_penalty_threshold)
+                        / self.params.maximum_tree_depth
+                    )
+                    - 1
+                )
+            else:
+                depth_penalty = 0
 
-            fitness = 1.0 / (1.0 + mse + complexity_penalty + var_penalty)
-            return np.clip(fitness, 0, 1)
+            # Operator complexity with weighted penalties
+            op_complexity = sum(2 if node.op in BINARY_OPS else 1 for node in tree)
+            op_penalty = self.params.parsimony_coefficient * (op_complexity / tree_size)
+
+            # Combined penalties with configurable weights
+            total_penalty = (
+                0.4 * size_penalty + 0.4 * depth_penalty + 0.2 * op_penalty
+            ) * self.params.parsimony_coefficient
+
+            # Accuracy score with improved balance
+            accuracy_score = 0.7 * r2 + 0.3 / (1 + rmse)
+
+            # Final fitness with adaptive penalty
+            fitness = accuracy_score / (1 + total_penalty)
+
+            return np.float64(np.clip(fitness, 0, 1))
 
         except (ValueError, RuntimeWarning, OverflowError):
             return np.float64(-np.inf)
@@ -252,7 +291,7 @@ class GeneticProgram:
         for _ in range(num_random):
             idx = random.randrange(self.params.elitism_count, len(self.population))
             self.population[idx] = self.create_random_tree(
-                random.randint(2, self.params.max_depth)
+                random.randint(2, self.params.maximum_tree_depth)
             )
 
     def _run_evolution_loop(
@@ -266,32 +305,33 @@ class GeneticProgram:
         generations_without_improvement = 0
         start_time = time.perf_counter()
 
-        iterator: range | tqdm = range(self.params.generations)
-        if show_progress:
-            iterator = tqdm(iterator, desc="Evolution progress", unit="gen", leave=True)
+        pbar = tqdm(
+            range(self.params.generations),
+            desc="Evolution progress",
+            unit="gen",
+            leave=True,
+        )
 
-        for gen in iterator:
+        for gen in pbar:
             gen_start_time = time.perf_counter()
             logger.debug(f"Generation {gen + 1}/{self.params.generations}")
 
             scores, valid_population, eval_time = self._evaluate_population(x, y)
             self.population = valid_population
 
-            if not scores and isinstance(iterator, tqdm):
-                iterator.set_postfix_str("Reinitializing population...")
+            if not scores:
+                pbar.set_postfix_str("Reinitializing population...")
                 continue
 
             best_fitness, generations_without_improvement = self._update_best_solution(
                 scores,
                 best_fitness,
                 generations_without_improvement,
-                iterator if isinstance(iterator, tqdm) else None,
+                pbar,
             )
 
-            if generations_without_improvement > 10 and isinstance(iterator, tqdm):
-                iterator.write(
-                    "No improvement for 10 generations, injecting diversity..."
-                )
+            if generations_without_improvement > 10:
+                pbar.write("No improvement for 10 generations, injecting diversity...")
                 self._inject_diversity()
                 generations_without_improvement = 0
 
@@ -314,7 +354,7 @@ class GeneticProgram:
         scores: List[np.float64],
         best_fitness: np.float64,
         generations_without_improvement: int,
-        pbar: Optional[tqdm],
+        pbar: tqdm,
     ) -> Tuple[np.float64, int]:
         current_best = np.max(scores)
         best_idx = scores.index(current_best)
@@ -323,8 +363,10 @@ class GeneticProgram:
             best_fitness = current_best
             self.best_solution = self.population[best_idx].copy()
             generations_without_improvement = 0
-            if pbar is not None:
-                pbar.set_postfix_str(f"Best fitness: {best_fitness:.4f}")
+            pbar.set_postfix_str(f"Best fitness: {best_fitness:.4f}")
+            pbar.write(
+                f"Best fitness: {best_fitness:.4f} - Expression: {self.best_solution}"
+            )
         else:
             generations_without_improvement += 1
 

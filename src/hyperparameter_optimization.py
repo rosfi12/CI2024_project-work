@@ -1,11 +1,9 @@
 import itertools
 import json
-import logging
 import os
 from datetime import datetime
 from multiprocessing import Manager, Pool
 from pathlib import Path
-from time import perf_counter
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
@@ -15,7 +13,7 @@ from tqdm.rich import tqdm
 from symb_regression.config import GeneticParams
 from symb_regression.core import GeneticProgram
 from symb_regression.utils import set_global_seed
-from symb_regression.utils.data_handler import load_data
+from symb_regression.utils.data_handler import load_data, split_data
 
 # Set random seed for reproducibility
 PROBLEM_DIR = os.getcwd()
@@ -23,7 +21,7 @@ DATA_DIR = os.path.join(PROBLEM_DIR, "data")
 
 
 def save_results(
-    results: Dict[str, Tuple[str, Dict[str, Any], float, float]],
+    results: Dict[str, Tuple[str, Dict[str, Any], float, str]],
     save_dir: str = "results",
 ):
     """Save optimization results to JSON and print to stdout"""
@@ -32,10 +30,10 @@ def save_results(
     # Print results to stdout first
     print("\n=== Optimization Results ===")
     formatted_results = {}
-    for pid, (_, params, fitness, time) in results.items():
+    for pid, (_, params, fitness, expression) in results.items():
         print(f"\nProblem {pid}:")
         print(f"Best fitness: {fitness:.4f}")
-        print(f"Execution time: {time:.2f}s")
+        print(f"Best expression: {expression}")
         print("Parameters:")
         for param, value in params.items():
             print(f"  {param}: {value}")
@@ -43,7 +41,7 @@ def save_results(
         formatted_results[f"problem_{pid}"] = {
             "parameters": params,
             "fitness": float(fitness),
-            "execution_time": float(time),
+            "best_expression": expression,
             "timestamp": datetime.now().isoformat(),
         }
 
@@ -66,67 +64,53 @@ def load_best_params(problem_id: str, results_file: str) -> Dict[str, Any]:
 
 
 def evaluate_params(
-    problem_id: str, params: Dict, x: np.ndarray, y: np.ndarray, n_runs: int = 1
-) -> Tuple[str, Dict, float, float]:
-    """Evaluate a parameter configuration multiple times and return average fitness"""
-
-    # Temporarily disable logging
-    logging.getLogger("symb_regression").setLevel(logging.ERROR)
-
-    genetic_params = GeneticParams(
-        tournament_size=params["tournament_size"],
-        mutation_prob=params["mutation_prob"],
-        crossover_prob=params["crossover_prob"],
-        elitism_count=params["elitism_count"],
-        population_size=params["population_size"],
-        generations=params["generations"],
-        max_depth=params["max_depth"],
-        min_depth=params["min_depth"],
-    )
+    problem_id: str, params: Dict, x: np.ndarray, y: np.ndarray, n_runs: int = 3
+) -> Tuple[str, Dict, float, str]:
+    genetic_params = GeneticParams(**params)
 
     fitnesses = []
-    times = []
+    best_expression = ""
+    best_fitness = float("-inf")
 
     for _ in range(n_runs):
         gp = GeneticProgram(genetic_params)
-        start = perf_counter()
-        # Disable progress bar in evolve
         best_solution, _ = gp.evolve(x, y, show_progress=False, collect_history=False)
-        end = perf_counter()
-
         fitness = gp.calculate_fitness(best_solution, x, y)
-        fitnesses.append(fitness)
-        times.append(end - start)
 
-    # Reset logging level
-    logging.getLogger("symb_regression").setLevel(logging.INFO)
+        if fitness > best_fitness:
+            best_fitness = fitness
+            best_expression = str(best_solution)
+
+        fitnesses.append(fitness)
 
     avg_fitness = np.mean(fitnesses).astype(float)
-    avg_time = np.mean(times).astype(float)
-
-    return problem_id, params, avg_fitness, avg_time
+    return problem_id, params, avg_fitness, best_expression
 
 
-def evaluate_params_with_progress(args) -> Tuple[str, Dict[str, Any], float, float]:
+def evaluate_params_with_progress(args) -> Tuple[str, Dict, float, str]:
     """Wrapper function that handles progress updates"""
-    problem_id, params, x, y, counter, total = args
-    n_runs = 3  # Default number of runs per configuration
-    result = evaluate_params(problem_id, params, x, y, n_runs)
+    problem_id, params, x_train, x_val, y_train, y_val, counter, total = args
+    result = evaluate_params(problem_id, params, x_train, y_train)
     counter.value += 1
     return result
 
 
-def optimize_parameters(problem_ids: List[str], save_dir: str = "results"):
+def optimize_parameters(
+    problem_ids: List[str], save_dir: str = "results", train_ratio: float = 0.01
+):
     # Parameter grid setup
     param_grid: Dict[str, list[int | float]] = {
-        "tournament_size": [3, 5, 7],
-        "mutation_prob": [0.2, 0.4, 0.6],
-        "crossover_prob": [0.7, 0.8, 0.9],
-        "elitism_count": [5],
-        "population_size": [500],
-        "generations": [100],
-        "max_depth": [4, 5, 6],
-        "min_depth": [2],
+        "tournament_size": [5, 7, 8],
+        "mutation_prob": [0.4, 0.6, 0.8],
+        "crossover_prob": [0.8, 0.9],
+        "elitism_count": [2, 4],
+        "population_size": [2000],
+        "generations": [400],
+        "max_depth": [
+            5,
+            6,
+        ],
+        "min_depth": [1],
     }
 
     # Generate combinations
@@ -135,7 +119,11 @@ def optimize_parameters(problem_ids: List[str], save_dir: str = "results"):
     ]
 
     # Load problem data
-    problem_data = {pid: load_data(DATA_DIR, f"problem_{pid}") for pid in problem_ids}
+    problem_data = {}
+    for pid in problem_ids:
+        x, y = load_data(DATA_DIR, f"problem_{pid}", show_stats=True)
+        x_train, x_val, y_train, y_val = split_data(x, y, train_size=train_ratio)
+        problem_data[pid] = (x_train, x_val, y_train, y_val)
 
     # Setup multiprocessing manager
     with Manager() as manager:
@@ -166,7 +154,7 @@ def optimize_parameters(problem_ids: List[str], save_dir: str = "results"):
 
 
 def process_results(
-    results: List[Tuple[str, Dict[str, Any], float, float]], problem_ids: List[str]
+    results: Tuple[str, Dict, float, str], problem_ids: List[str]
 ) -> Dict[str, Tuple[str, Dict[str, Any], float, float]]:
     """Process and return best results for each problem"""
     best_results = {}
@@ -182,7 +170,7 @@ if __name__ == "__main__":
     set_global_seed(42)
 
     # Problems to optimize
-    problem_ids: List[str] = ["3", "5"]
+    problem_ids: List[str] = ["3"]
 
     print("Starting parameter optimization...")
     print(f"Optimizing for problems: {problem_ids}")
