@@ -328,8 +328,8 @@ class GeneticProgram:
         max_tree_size: int = max(tree_sizes)
 
         # Population diversity
-        unique_expressions = len(set(str(tree) for tree in self.population))
-        population_diversity = unique_expressions / len(self.population)
+        unique_expressions: int = len(set(str(tree) for tree in self.population))
+        population_diversity: float = unique_expressions / len(self.population)
 
         # Operator distribution
         operator_counts: dict[str, int] = {}
