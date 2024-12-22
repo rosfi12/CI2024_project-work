@@ -53,7 +53,7 @@ def run_symbolic_regression(
             crossover_prob=0.8,
             elitism_count=10,
             population_size=1000,
-            generations=200,
+            generations=300,
             max_depth=5,
             min_depth=2,
         )
@@ -110,9 +110,9 @@ np.random.seed(42)
 
 # Load and process data
 PROBLEM_DIR = os.getcwd()
-DATA_DIR = os.path.join(PROBLEM_DIR, "data")
+DATA_DIR = os.path.join(PROBLEM_DIR, "src/data")
 
-x, y = load_data(DATA_DIR, "problem_7")
+x, y = load_data(DATA_DIR, "problem_2")
 
 # Run symbolic regression
 run_symbolic_regression(x, y)
