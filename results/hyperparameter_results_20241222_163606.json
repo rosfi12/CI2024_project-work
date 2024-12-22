@@ -1,0 +1,14 @@
+[problem_1]
+fitness = 0.6643987265364079
+execution_time = 1.722805366667065
+timestamp = "2024-12-22T16:36:06.243553"
+
+[problem_1.parameters]
+tournament_size = 3
+mutation_prob = 0.2
+crossover_prob = 0.7
+elitism_count = 5
+population_size = 500
+generations = 100
+max_depth = 4
+min_depth = 2

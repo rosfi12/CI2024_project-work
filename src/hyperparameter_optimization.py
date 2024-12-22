@@ -9,6 +9,7 @@ from time import perf_counter
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
+import toml
 from tqdm.rich import tqdm
 
 from symb_regression.config import GeneticParams
@@ -46,12 +47,12 @@ def save_results(
             "timestamp": datetime.now().isoformat(),
         }
 
-    # Save to JSON file
+    # Save to TOML file
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    results_file = os.path.join(save_dir, f"hyperparameter_results_{timestamp}.json")
+    results_file = os.path.join(save_dir, f"hyperparameter_results_{timestamp}.toml")
 
     with open(results_file, "w") as f:
-        json.dump(formatted_results, f, indent=4)
+        toml.dump(formatted_results, f)
 
     print(f"\nResults saved to {results_file}")
     return results_file
