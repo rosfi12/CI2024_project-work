@@ -1,0 +1,17 @@
+{
+    "problem_1": {
+        "parameters": {
+            "tournament_size": 7,
+            "mutation_prob": 0.4,
+            "crossover_prob": 0.8,
+            "elitism_count": 5,
+            "population_size": 200,
+            "generations": 200,
+            "max_depth": 4,
+            "min_depth": 2
+        },
+        "fitness": 0.9963109445194466,
+        "execution_time": 3.1982335333335263,
+        "timestamp": "2024-12-22T12:15:00.411556"
+    }
+}

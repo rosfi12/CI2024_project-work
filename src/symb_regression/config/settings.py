@@ -44,16 +44,8 @@ class MutationType(Enum):
     SIMPLIFY = "simplify"
 
 
-@dataclass
-class BaseConfig:
-    """Base configuration with shared parameters"""
-
-    VARIABLE_PROBABILITY: float = 0.7
-    VALUE_STEP_FACTOR: float = 0.1
-
-
-@dataclass
-class TreeConfig(BaseConfig):
+@dataclass(frozen=True)
+class TreeConfig:
     """Configuration for tree creation"""
 
     # Node type probabilities
@@ -73,10 +65,12 @@ class TreeConfig(BaseConfig):
     DEFAULT_N_VARIABLES: int = 1
 
 
-@dataclass
-class MutationConfig(BaseConfig):
+@dataclass(frozen=True)
+class MutationConfig:
     """Configuration for mutation parameters"""
 
+    MUTATION_DECAY = 0.9
+    VALUE_STEP_FACTOR: float = 0.1
     MUTATION_WEIGHTS: Dict[MutationType, float] = field(
         default_factory=lambda: {
             MutationType.SUBTREE: 0.2,

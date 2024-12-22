@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import winsound
 from logging import Logger
 from typing import List
 
@@ -43,6 +44,7 @@ def run_symbolic_regression(
     y: np.ndarray,
     params: GeneticParams | None = None,
     debug: bool = False,
+    play_sound: bool = False,
 ) -> tuple[Node, List[Metrics]]:
     logger: Logger = logging.getLogger("symb_regression")
 
@@ -51,10 +53,10 @@ def run_symbolic_regression(
             tournament_size=7,
             mutation_prob=0.4,
             crossover_prob=0.8,
-            elitism_count=10,
+            elitism_count=5,
             population_size=1000,
-            generations=200,
-            max_depth=5,
+            generations=300,
+            max_depth=4,
             min_depth=2,
         )
 
@@ -75,7 +77,7 @@ def run_symbolic_regression(
         execution_time = end_time - start_time
 
         # Use print for better visibility of results
-        print_section_header("SYMBOLIC REGRESSION RESULTS")
+        print_section_header(f"SYMBOLIC REGRESSION RESULTS - {PROBLEM}")
         print(f"Best Expression Found: {best_solution}")
         print(f"Final Fitness: {gp.calculate_fitness(best_solution, x, y):g}")
         print(f"Execution Time: {execution_time:.2f} seconds")
@@ -84,7 +86,7 @@ def run_symbolic_regression(
 
         # Plot the evolution progress
 
-        fig, axs = plt.subplots(1, 2, figsize=(12, 6))
+        _, axs = plt.subplots(1, 2, figsize=(12, 6))
         plot_evolution_metrics(history, ax=axs[0])
 
         mse, r2 = plot_prediction_analysis(best_solution, x, y, ax=axs[1])
@@ -96,7 +98,10 @@ def run_symbolic_regression(
         print(f"Mean Squared Error: {mse:.6f}")
         print(f"R² Score: {r2:.6f} ({r2*100:.1f}% of variance explained)")
 
-        plot_expression_tree(best_solution)
+        # plot_expression_tree(best_solution)
+        if play_sound:
+            # Play Windows default "SystemExclamation" sound
+            winsound.PlaySound("SystemExclamation", winsound.SND_ALIAS)
 
         return best_solution, history
 
@@ -106,13 +111,13 @@ def run_symbolic_regression(
 
 
 # Set random seed for reproducibility
-np.random.seed(42)
 
 # Load and process data
 PROBLEM_DIR = os.getcwd()
 DATA_DIR = os.path.join(PROBLEM_DIR, "data")
+PROBLEM = "problem_1"
+x, y = load_data(DATA_DIR, PROBLEM)
 
-x, y = load_data(DATA_DIR, "problem_7")
 
 # Run symbolic regression
-run_symbolic_regression(x, y)
+run_symbolic_regression(x, y, play_sound=True)

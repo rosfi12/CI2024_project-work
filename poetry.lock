@@ -898,6 +898,17 @@ MarkupSafe = ">=2.0"
 i18n = ["Babel (>=2.7)"]
 
 [[package]]
+name = "joblib"
+version = "1.4.2"
+description = "Lightweight pipelining with Python functions"
+optional = false
+python-versions = ">=3.8"
+files = [
+    {file = "joblib-1.4.2-py3-none-any.whl", hash = "sha256:06d478d5674cbc267e7496a410ee875abd68e4340feff4490bcb7afb88060ae6"},
+    {file = "joblib-1.4.2.tar.gz", hash = "sha256:2382c5816b2636fbd20a09e0f4e9dad4736765fdfb7dca582943b9c1366b3f0e"},
+]
+
+[[package]]
 name = "json5"
 version = "0.10.0"
 description = "A Python implementation of the JSON5 data format."
@@ -2925,9 +2936,9 @@ files = [
 ]
 
 [extras]
-plot = ["matplotlib", "networkx", "pydot"]
+plot = ["matplotlib", "networkx"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "5ba7d71f5e1665b4345459268a2bd67880d801cdbba9edcfaf5cd3acb903b16d"
+content-hash = "da5c442c2c9dbd1754fba14c7c704f792aff0022ed0fe1727ed3f70a0192cb6f"

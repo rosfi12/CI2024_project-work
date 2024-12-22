@@ -6,7 +6,7 @@ import numpy.typing as npt
 
 
 def load_data(
-    data_dir: str, problem_name: str
+    data_dir: str, problem_name: str, show_stats: bool = False
 ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Load problem data from a .npz file."""
     try:
@@ -22,24 +22,25 @@ def load_data(
         if x.ndim == 2 and x.shape[0] < x.shape[1]:
             x = x.T
 
-        print("\nData Statistics:")
-        print(f"X shape: {x.shape}, Y shape: {y.shape}")
-        print(f"Number of variables: {x.shape[1] if x.ndim > 1 else 1}")
+        if show_stats:
+            print("\nData Statistics:")
+            print(f"X shape: {x.shape}, Y shape: {y.shape}")
+            print(f"Number of variables: {x.shape[1] if x.ndim > 1 else 1}")
 
-        # Print statistics for each variable
-        if x.ndim > 1:
-            for i in range(x.shape[1]):
-                print(f"\nVariable x{i}:")
-                print(f"  Range: [{x[:,i].min():.3f}, {x[:,i].max():.3f}]")
-                print(f"  Mean: {x[:,i].mean():.3f}")
-                print(f"  Std: {x[:,i].std():.3f}")
-                corr = np.corrcoef(x[:, i], y)[0, 1]
-                print(f"  Correlation with y: {corr:.3f}")
+            # Print statistics for each variable
+            if x.ndim > 1:
+                for i in range(x.shape[1]):
+                    print(f"\nVariable x{i}:")
+                    print(f"  Range: [{x[:,i].min():.3f}, {x[:,i].max():.3f}]")
+                    print(f"  Mean: {x[:,i].mean():.3f}")
+                    print(f"  Std: {x[:,i].std():.3f}")
+                    corr = np.corrcoef(x[:, i], y)[0, 1]
+                    print(f"  Correlation with y: {corr:.3f}")
 
-        print("\nTarget y:")
-        print(f"  Range: [{y.min():.3f}, {y.max():.3f}]")
-        print(f"  Mean: {y.mean():.3f}")
-        print(f"  Std: {y.std():.3f}")
+            print("\nTarget y:")
+            print(f"  Range: [{y.min():.3f}, {y.max():.3f}]")
+            print(f"  Mean: {y.mean():.3f}")
+            print(f"  Std: {y.std():.3f}")
 
         return x, y
 

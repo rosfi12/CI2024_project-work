@@ -14,7 +14,7 @@ from tqdm.std import TqdmExperimentalWarning
 from symb_regression.config.settings import GeneticParams
 from symb_regression.core.tree import Node
 from symb_regression.operators.crossover import crossover
-from symb_regression.operators.definitions import BINARY_OPS, UNARY_OPS
+from symb_regression.operators.definitions import BINARY_OPS, UNARY_OPS, SymbolicConfig
 from symb_regression.operators.mutation import create_random_tree, mutate
 from symb_regression.utils.metrics import Metrics
 
@@ -26,12 +26,16 @@ warnings.filterwarnings("ignore", category=TqdmExperimentalWarning)
 
 
 class GeneticProgram:
-    def __init__(self, params: GeneticParams = GeneticParams()) -> None:
-        self.params = params
+    def __init__(
+        self,
+        params: GeneticParams = GeneticParams(),
+        config: SymbolicConfig = SymbolicConfig.create(),
+    ) -> None:
+        self.params: GeneticParams = params
         self.population: List[Node] = []
         self.best_solution: Optional[Node] = None
         self.metrics_history: List[Metrics] = []
-        self.n_variables: int = 0  # Will be set when evolve is called
+        self.config: SymbolicConfig = config
         self.operator_success: defaultdict = defaultdict(
             lambda: {"uses": 0, "improvements": 0}
         )
@@ -76,7 +80,7 @@ class GeneticProgram:
                         )
 
     def create_random_tree(self, depth: int) -> Node:
-        return create_random_tree(depth, self.params.max_depth, self.n_variables)
+        return create_random_tree(depth, self.params.max_depth, self.config.n_variables)
 
     def mutate(self, node: Node) -> Node:
         # Create default weights if no history yet
@@ -87,7 +91,7 @@ class GeneticProgram:
             node=node,
             mutation_prob=self.params.mutation_prob,
             max_depth=self.params.max_depth,
-            n_variables=self.n_variables,
+            n_variables=self.config.n_variables,
             unary_weights=unary_weights,
             binary_weights=binary_weights,
         )
@@ -96,7 +100,7 @@ class GeneticProgram:
         self, tree: Node, x: npt.NDArray[np.float64], y: npt.NDArray[np.float64]
     ) -> np.float64:
         try:
-            pred = tree.evaluate(x)
+            pred = tree.evaluate(x, self.config)
             if np.any(np.isnan(pred)) or np.any(np.isinf(pred)):
                 return np.float64(-np.inf)
 
@@ -108,7 +112,7 @@ class GeneticProgram:
             }
 
             # Penalize not using all variables
-            var_penalty: float = 0.5 * (self.n_variables - len(used_vars))
+            var_penalty: float = 0.5 * (self.config.n_variables - len(used_vars))
 
             # Other penalties
             complexity_penalty = (
@@ -133,15 +137,18 @@ class GeneticProgram:
         return self.population[winner_idx]
 
     def evolve(
-        self, x: npt.NDArray[np.float64], y: npt.NDArray[np.float64]
+        self,
+        x: npt.NDArray[np.float64],
+        y: npt.NDArray[np.float64],
+        show_progress: bool = True,
     ) -> Tuple[Node, List[Metrics]]:
         self._initialize_evolution(x)
         self._create_initial_population()
 
-        return self._run_evolution_loop(x, y)
+        return self._run_evolution_loop(x, y, show_progress)
 
     def _initialize_evolution(self, x: npt.NDArray[np.float64]) -> None:
-        self.n_variables = x.shape[1]  if x.ndim > 1 else 1
+        self.config.n_variables = x.shape[1] if x.ndim > 1 else 1
         logger.info("Initializing population...")
         self.best_solution = None
 
@@ -236,48 +243,50 @@ class GeneticProgram:
             )
 
     def _run_evolution_loop(
-        self, x: npt.NDArray[np.float64], y: npt.NDArray[np.float64]
+        self,
+        x: npt.NDArray[np.float64],
+        y: npt.NDArray[np.float64],
+        show_progress: bool = True,
     ) -> Tuple[Node, List[Metrics]]:
         best_fitness: np.float64 = np.float64(-np.inf)
         generations_without_improvement = 0
         start_time = time.perf_counter()
 
-        with tqdm(
-            range(self.params.generations),
-            desc="Evolution progress",
-            unit="gen",
-            leave=True,
-        ) as pbar:
-            for gen in pbar:
-                gen_start_time = time.perf_counter()
-                logger.debug(f"Generation {gen + 1}/{self.params.generations}")
+        iterator: range | tqdm = range(self.params.generations)
+        if show_progress:
+            iterator = tqdm(iterator, desc="Evolution progress", unit="gen", leave=True)
 
-                scores, valid_population, eval_time = self._evaluate_population(x, y)
-                self.population = valid_population
+        for gen in iterator:
+            gen_start_time = time.perf_counter()
+            logger.debug(f"Generation {gen + 1}/{self.params.generations}")
 
-                if not scores:
-                    pbar.set_postfix_str("Reinitializing population...")
-                    continue
+            scores, valid_population, eval_time = self._evaluate_population(x, y)
+            self.population = valid_population
 
-                best_fitness, generations_without_improvement = (
-                    self._update_best_solution(
-                        scores, best_fitness, generations_without_improvement, pbar
-                    )
+            if not scores and isinstance(iterator, tqdm):
+                iterator.set_postfix_str("Reinitializing population...")
+                continue
+
+            best_fitness, generations_without_improvement = self._update_best_solution(
+                scores,
+                best_fitness,
+                generations_without_improvement,
+                iterator if isinstance(iterator, tqdm) else None,
+            )
+
+            if generations_without_improvement > 10 and isinstance(iterator, tqdm):
+                iterator.write(
+                    "No improvement for 10 generations, injecting diversity..."
                 )
+                self._inject_diversity()
+                generations_without_improvement = 0
 
-                if generations_without_improvement > 10:
-                    pbar.write(
-                        "No improvement for 10 generations, injecting diversity..."
-                    )
-                    self._inject_diversity()
-                    generations_without_improvement = 0
+            new_population: list[Node] = []
+            self._apply_elitism(scores, new_population)
+            self._create_offspring(scores, new_population)
 
-                new_population: list[Node] = []
-                self._apply_elitism(scores, new_population)
-                self._create_offspring(scores, new_population)
-
-                self.population = new_population[: self.params.population_size]
-                self._update_metrics(gen, start_time, scores, gen_start_time, eval_time)
+            self.population = new_population[: self.params.population_size]
+            self._update_metrics(gen, start_time, scores, gen_start_time, eval_time)
 
         if self.best_solution is None:
             raise ValueError("No solution found")
@@ -289,7 +298,7 @@ class GeneticProgram:
         scores: List[np.float64],
         best_fitness: np.float64,
         generations_without_improvement: int,
-        pbar: tqdm,
+        pbar: Optional[tqdm],
     ) -> Tuple[np.float64, int]:
         current_best = np.max(scores)
         best_idx = scores.index(current_best)
@@ -298,7 +307,8 @@ class GeneticProgram:
             best_fitness = current_best
             self.best_solution = self.population[best_idx].copy()
             generations_without_improvement = 0
-            pbar.set_postfix_str(f"Best fitness: {best_fitness:.4f}")
+            if pbar is not None:
+                pbar.set_postfix_str(f"Best fitness: {best_fitness:.4f}")
         else:
             generations_without_improvement += 1
 
