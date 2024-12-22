@@ -50,7 +50,7 @@ def run_symbolic_regression(
         params = GeneticParams(
             tournament_size=7,
             mutation_prob=0.4,
-            crossover_prob=0.8,
+            crossover_prob=0.7,
             elitism_count=10,
             population_size=1000,
             generations=300,
