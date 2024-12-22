@@ -17,6 +17,8 @@
         scipy = "^1.14.1"
         tqdm = "^4.67.1"
         rich = "^13.9.4"
+        joblib = "^1.4.2"
+        toml = "^0.10.2"
 
     [tool.poetry.extras]
         plot = ["matplotlib", "networkx", "pydot"]
@@ -32,4 +34,4 @@
 
 [[tool.mypy.overrides]]
     ignore_missing_imports = true
-    module = ["icecream.*", "networkx.*", "tqdm.*"]
+    module = ["icecream.*", "networkx.*", "tqdm.*", "joblib.*", "toml.*"]

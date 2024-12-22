@@ -6,7 +6,7 @@ import numpy.typing as npt
 
 
 def load_data(
-    data_dir: str, problem_name: str
+    data_dir: str, problem_name: str, show_stats: bool = False
 ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Load problem data from a .npz file."""
     try:
@@ -22,24 +22,25 @@ def load_data(
         if x.ndim == 2 and x.shape[0] < x.shape[1]:
             x = x.T
 
-        print("\nData Statistics:")
-        print(f"X shape: {x.shape}, Y shape: {y.shape}")
-        print(f"Number of variables: {x.shape[1] if x.ndim > 1 else 1}")
+        if show_stats:
+            print("\nData Statistics:")
+            print(f"X shape: {x.shape}, Y shape: {y.shape}")
+            print(f"Number of variables: {x.shape[1] if x.ndim > 1 else 1}")
 
-        # Print statistics for each variable
-        if x.ndim > 1:
-            for i in range(x.shape[1]):
-                print(f"\nVariable x{i}:")
-                print(f"  Range: [{x[:,i].min():.3f}, {x[:,i].max():.3f}]")
-                print(f"  Mean: {x[:,i].mean():.3f}")
-                print(f"  Std: {x[:,i].std():.3f}")
-                corr = np.corrcoef(x[:, i], y)[0, 1]
-                print(f"  Correlation with y: {corr:.3f}")
+            # Print statistics for each variable
+            if x.ndim > 1:
+                for i in range(x.shape[1]):
+                    print(f"\nVariable x{i}:")
+                    print(f"  Range: [{x[:,i].min():.3f}, {x[:,i].max():.3f}]")
+                    print(f"  Mean: {x[:,i].mean():.3f}")
+                    print(f"  Std: {x[:,i].std():.3f}")
+                    corr = np.corrcoef(x[:, i], y)[0, 1]
+                    print(f"  Correlation with y: {corr:.3f}")
 
-        print("\nTarget y:")
-        print(f"  Range: [{y.min():.3f}, {y.max():.3f}]")
-        print(f"  Mean: {y.mean():.3f}")
-        print(f"  Std: {y.std():.3f}")
+            print("\nTarget y:")
+            print(f"  Range: [{y.min():.3f}, {y.max():.3f}]")
+            print(f"  Mean: {y.mean():.3f}")
+            print(f"  Std: {y.std():.3f}")
 
         return x, y
 
@@ -50,7 +51,7 @@ def load_data(
 def split_data(
     x: npt.NDArray[np.float64],
     y: npt.NDArray[np.float64],
-    train_ratio: float = 0.8,
+    train_size: float = 0.8,
 ) -> Tuple[
     npt.NDArray[np.float64],
     npt.NDArray[np.float64],
@@ -68,16 +69,37 @@ def split_data(
     Returns:
         Tuple containing (x_train, x_val, y_train, y_val)
     """
-    n: int = len(x)
-    # Check if features are in columns and transform if needed
-    if x.ndim == 2 and x.shape[1] < x.shape[0]:
-        x = x.T
-    idx = np.random.permutation(n)
-    train_size = int(n * train_ratio)
+    # Input validation
+    if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
+        raise TypeError("Input x and y must be numpy arrays")
 
-    x_train: npt.NDArray[np.float64] = x[idx[:train_size]]
-    x_val: npt.NDArray[np.float64] = x[idx[train_size:]]
-    y_train: npt.NDArray[np.float64] = y[idx[:train_size]]
-    y_val: npt.NDArray[np.float64] = y[idx[train_size:]]
+    if train_size <= 0 or train_size >= 1:
+        raise ValueError("train_ratio must be between 0 and 1")
+
+    # Handle different input shapes
+    if x.ndim == 1:
+        x = x.reshape(-1, 1)
+    elif x.ndim == 2 and x.shape[0] < x.shape[1]:
+        x = x.T
+
+    n_samples = x.shape[0]
+
+    if len(y.shape) == 1:
+        y = y.reshape(-1, 1)
+
+    if x.shape[0] != y.shape[0]:
+        raise ValueError(
+            f"x and y must have same number of samples. Got x: {x.shape[0]}, y: {y.shape[0]}"
+        )
+
+    # Create random permutation
+    idx = np.random.permutation(n_samples)
+    train_size = int(n_samples * train_size)
+
+    # Split the data
+    x_train = x[idx[:train_size]]
+    x_val = x[idx[train_size:]]
+    y_train = y[idx[:train_size]]
+    y_val = y[idx[train_size:]]
 
     return x_train, x_val, y_train, y_val
