@@ -57,15 +57,46 @@ def mutate(
                 node.value += random.gauss(0, step)
 
         elif mutation_type == MutationType.SIMPLIFY:
-            if node.op == "*":
+            # Identity rules
+            if node.op == "*":  # Multiplication identities
                 if (node.left and node.left.value == 0) or (
                     node.right and node.right.value == 0
                 ):
-                    return Node(value=0)
+                    return Node(value=0)  # x * 0 = 0
                 if node.left and node.left.value == 1:
-                    return node.right.copy() if node.right else node
+                    return node.right.copy() if node.right else node  # 1 * x = x
                 if node.right and node.right.value == 1:
-                    return node.left.copy() if node.left else node
+                    return node.left.copy() if node.left else node  # x * 1 = x
+
+            elif node.op == "+":  # Addition identities
+                if node.left and node.left.value == 0:
+                    return node.right.copy() if node.right else node  # 0 + x = x
+                if node.right and node.right.value == 0:
+                    return node.left.copy() if node.left else node  # x + 0 = x
+
+            elif node.op == "-":  # Subtraction identities
+                if node.right and node.right.value == 0:
+                    return node.left.copy() if node.left else node  # x - 0 = x
+                if node.left and node.right and node.left.value == node.right.value:
+                    return Node(value=0)  # x - x = 0
+
+            elif node.op == "/":  # Division identities
+                if node.left and node.left.value == 0:
+                    return Node(value=0)  # 0 / x = 0
+                if node.right and node.right.value == 1:
+                    return node.left.copy() if node.left else node  # x / 1 = x
+                if node.left and node.right and node.left.value == node.right.value:
+                    return Node(value=1)  # x / x = 1 (when x ≠ 0)
+
+            elif node.op == "**":  # Power identities
+                if node.right and node.right.value == 0:
+                    return Node(value=1)  # x ^ 0 = 1
+                if node.right and node.right.value == 1:
+                    return node.left.copy() if node.left else node  # x ^ 1 = x
+                if node.left and node.left.value == 1:
+                    return Node(value=1)  # 1 ^ x = 1
+                if node.left and node.left.value == 0:
+                    return Node(value=0)  # 0 ^ x = 0 (when x > 0)
 
     # Recursively mutate children with reduced probability
     if node.left:
