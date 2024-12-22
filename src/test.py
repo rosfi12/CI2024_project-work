@@ -11,6 +11,7 @@ import numpy as np
 from symb_regression.config import GeneticParams
 from symb_regression.core import GeneticProgram
 from symb_regression.core.tree import Node
+from symb_regression.operators.definitions import SymbolicConfig
 from symb_regression.utils.data_handler import load_data
 from symb_regression.utils.metrics import Metrics
 from symb_regression.utils.plotting import (
@@ -50,13 +51,13 @@ def run_symbolic_regression(
 
     if params is None:
         params = GeneticParams(
-            tournament_size=7,
-            mutation_prob=0.4,
-            crossover_prob=0.8,
+            tournament_size=5,
+            mutation_prob=0.6,
+            crossover_prob=0.9,
             elitism_count=5,
             population_size=1000,
             generations=300,
-            max_depth=4,
+            max_depth=5,
             min_depth=2,
         )
 
@@ -75,6 +76,10 @@ def run_symbolic_regression(
 
         end_time = time.perf_counter()
         execution_time = end_time - start_time
+
+        if play_sound:
+            # Play Windows default "SystemExclamation" sound
+            winsound.PlaySound("SystemExclamation", winsound.SND_ALIAS)
 
         # Use print for better visibility of results
         print_section_header(f"SYMBOLIC REGRESSION RESULTS - {PROBLEM}")
@@ -99,9 +104,6 @@ def run_symbolic_regression(
         print(f"R² Score: {r2:.6f} ({r2*100:.1f}% of variance explained)")
 
         # plot_expression_tree(best_solution)
-        if play_sound:
-            # Play Windows default "SystemExclamation" sound
-            winsound.PlaySound("SystemExclamation", winsound.SND_ALIAS)
 
         return best_solution, history
 
