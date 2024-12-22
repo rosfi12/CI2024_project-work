@@ -25,13 +25,20 @@ def save_results(
     results: Dict[str, Tuple[str, Dict[str, Any], float, float]],
     save_dir: str = "results",
 ):
-    """Save optimization results to JSON file"""
-    # Create results directory if it doesn't exist
+    """Save optimization results to JSON and print to stdout"""
     Path(save_dir).mkdir(parents=True, exist_ok=True)
 
-    # Format results for saving
+    # Print results to stdout first
+    print("\n=== Optimization Results ===")
     formatted_results = {}
     for pid, (_, params, fitness, time) in results.items():
+        print(f"\nProblem {pid}:")
+        print(f"Best fitness: {fitness:.4f}")
+        print(f"Execution time: {time:.2f}s")
+        print("Parameters:")
+        for param, value in params.items():
+            print(f"  {param}: {value}")
+
         formatted_results[f"problem_{pid}"] = {
             "parameters": params,
             "fitness": float(fitness),
@@ -40,7 +47,7 @@ def save_results(
         }
 
     # Save to JSON file
-    timestamp = datetime.now().isoformat()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     results_file = os.path.join(save_dir, f"hyperparameter_results_{timestamp}.json")
 
     with open(results_file, "w") as f:
@@ -83,7 +90,7 @@ def evaluate_params(
         gp = GeneticProgram(genetic_params)
         start = perf_counter()
         # Disable progress bar in evolve
-        best_solution, _ = gp.evolve(x, y, show_progress=False)
+        best_solution, _ = gp.evolve(x, y, show_progress=False, collect_history=False)
         end = perf_counter()
 
         fitness = gp.calculate_fitness(best_solution, x, y)
@@ -115,8 +122,8 @@ def optimize_parameters(problem_ids: List[str], save_dir: str = "results"):
         "mutation_prob": [0.2, 0.4, 0.6],
         "crossover_prob": [0.7, 0.8, 0.9],
         "elitism_count": [5],
-        "population_size": [200],
-        "generations": [200],
+        "population_size": [500],
+        "generations": [100],
         "max_depth": [4, 5, 6],
         "min_depth": [2],
     }
@@ -174,7 +181,7 @@ if __name__ == "__main__":
     set_global_seed(42)
 
     # Problems to optimize
-    problem_ids: List[str] = ["1", "3", "5"]
+    problem_ids: List[str] = ["3", "5"]
 
     print("Starting parameter optimization...")
     print(f"Optimizing for problems: {problem_ids}")

@@ -141,11 +141,24 @@ class GeneticProgram:
         x: npt.NDArray[np.float64],
         y: npt.NDArray[np.float64],
         show_progress: bool = True,
+        collect_history: bool = True,
     ) -> Tuple[Node, List[Metrics]]:
+        """
+        Evolve the population to find a solution.
+
+        Args:
+            x: Input data
+            y: Target values
+            show_progress: Whether to show progress bar
+            collect_history: Whether to collect history metrics
+
+        Returns:
+            Tuple of (best solution, evolution history)
+        """
         self._initialize_evolution(x)
         self._create_initial_population()
 
-        return self._run_evolution_loop(x, y, show_progress)
+        return self._run_evolution_loop(x, y, show_progress, collect_history)
 
     def _initialize_evolution(self, x: npt.NDArray[np.float64]) -> None:
         self.config.n_variables = x.shape[1] if x.ndim > 1 else 1
@@ -247,6 +260,7 @@ class GeneticProgram:
         x: npt.NDArray[np.float64],
         y: npt.NDArray[np.float64],
         show_progress: bool = True,
+        collect_history: bool = True,
     ) -> Tuple[Node, List[Metrics]]:
         best_fitness: np.float64 = np.float64(-np.inf)
         generations_without_improvement = 0
@@ -286,7 +300,9 @@ class GeneticProgram:
             self._create_offspring(scores, new_population)
 
             self.population = new_population[: self.params.population_size]
-            self._update_metrics(gen, start_time, scores, gen_start_time, eval_time)
+
+            if collect_history:
+                self._update_metrics(gen, start_time, scores, gen_start_time, eval_time)
 
         if self.best_solution is None:
             raise ValueError("No solution found")
