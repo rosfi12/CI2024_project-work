@@ -1,11 +1,10 @@
 import logging
 import sys
+from logging import Logger
 from typing import Optional
 
 
-def setup_logger(
-    debug: bool = False, log_file: Optional[str] = None
-) -> logging.Logger:
+def setup_logger(debug: bool = False, log_file: Optional[str] = None) -> logging.Logger:
     """
     Configure logging for the symbolic regression package.
 
@@ -17,7 +16,7 @@ def setup_logger(
         Configured logger instance
     """
     # Create logger
-    logger = logging.getLogger("symb_regression")
+    logger: Logger = logging.getLogger("symb_regression")
     logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
     # Clear any existing handlers

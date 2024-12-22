@@ -1,13 +1,15 @@
 import logging
 import random
 import time
+import warnings
 from collections import defaultdict
 from logging import Logger
 from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import numpy.typing as npt
-from tqdm import tqdm
+from tqdm.rich import tqdm
+from tqdm.std import TqdmExperimentalWarning
 
 from symb_regression.config.settings import GeneticParams
 from symb_regression.core.tree import Node
@@ -18,6 +20,10 @@ from symb_regression.utils.metrics import Metrics
 
 logger: Logger = logging.getLogger("symb_regression")
 
+# Suppress TQDM experimental warning when using rich progress bars
+# 🌟Nice Progress Bar!🌟
+warnings.filterwarnings("ignore", category=TqdmExperimentalWarning)
+
 
 class GeneticProgram:
     def __init__(self, params: GeneticParams = GeneticParams()) -> None:
@@ -25,7 +31,7 @@ class GeneticProgram:
         self.population: List[Node] = []
         self.best_solution: Optional[Node] = None
         self.metrics_history: List[Metrics] = []
-        self.n_variables: int = 1  # Will be set when evolve is called
+        self.n_variables: int = 0  # Will be set when evolve is called
         self.operator_success: defaultdict = defaultdict(
             lambda: {"uses": 0, "improvements": 0}
         )
@@ -38,16 +44,6 @@ class GeneticProgram:
             unique_structures.add(structure)
         return len(unique_structures) / len(self.population)
 
-    # def get_tree_structure(self, node: Node) -> str:
-    #     """Get a string representation of tree structure."""
-    #     if node is None:
-    #         return ""
-    #     if node.value is not None:
-    #         return "C"
-    #     if node.op and node.op.startswith("x"):
-    #         return node.op
-    #     return f"({node.op}{self.get_tree_structure(node.left)}{self.get_tree_structure(node.right)})"
-
     def get_tree_structure(
         self, node: Optional[Node]
     ) -> Dict[str, Union[str, int, float]]:
@@ -58,7 +54,7 @@ class GeneticProgram:
         structure: Dict[str, Union[str, int, float]] = {
             "op": node.op if node.op else str(node.value),
             "depth": node.depth(),
-            "size": node.size(),
+            "size": len(node),
         }
         return structure
 
@@ -108,18 +104,18 @@ class GeneticProgram:
 
             # Count unique variables used
             used_vars: set[str] = {
-                node.op for node in tree.nodes() if node.op and node.op.startswith("x")
+                node.op for node in tree if node.op and node.op.startswith("x")
             }
 
             # Penalize not using all variables
-            var_penalty = 0.5 * (self.n_variables - len(used_vars))
+            var_penalty: float = 0.5 * (self.n_variables - len(used_vars))
 
             # Other penalties
             complexity_penalty = (
-                0.001 * tree.size() if tree.op or tree.value is None else 1.0
+                0.001 * len(tree) if tree.op or tree.value is None else 1.0
             )
 
-            if tree.size() < 3:
+            if len(tree) < 3:
                 complexity_penalty += 0.5
 
             fitness = 1.0 / (1.0 + mse + complexity_penalty + var_penalty)
@@ -128,18 +124,11 @@ class GeneticProgram:
         except (ValueError, RuntimeWarning, OverflowError):
             return np.float64(-np.inf)
 
-    # def tournament_selection(self, scores: List[np.float64]) -> Node:
-    #     indices = random.sample(
-    #         range(len(self.population)), self.params.tournament_size
-    #     )
-    #     winner_idx = max(indices, key=lambda i: scores[i])
-    #     return self.population[winner_idx]
-
     def tournament_selection(self, scores: List[np.float64]) -> Node:
         indices = np.array(
             random.sample(range(len(self.population)), self.params.tournament_size)
         )
-        tournament_scores = np.array(scores)[indices]
+        tournament_scores: npt.NDArray[np.float64] = np.array(scores)[indices]
         winner_idx = indices[np.argmax(tournament_scores)]
         return self.population[winner_idx]
 
@@ -152,7 +141,7 @@ class GeneticProgram:
         return self._run_evolution_loop(x, y)
 
     def _initialize_evolution(self, x: npt.NDArray[np.float64]) -> None:
-        self.n_variables = x.shape[1] if x.ndim > 1 else 1
+        self.n_variables = x.shape[1]  if x.ndim > 1 else 1
         logger.info("Initializing population...")
         self.best_solution = None
 
@@ -167,6 +156,7 @@ class GeneticProgram:
             except Exception as e:
                 logger.debug(f"Error creating tree: {e}")
                 continue
+            logger.debug(f"Current population size: {len(self.population)}")
         logger.debug(f"Initial population size: {len(self.population)}")
 
     def _evaluate_population(
@@ -323,29 +313,29 @@ class GeneticProgram:
         eval_time: float,
     ) -> None:
         # Fitness statistics
-        fitness_array = np.array(scores)
-        best_fitness = np.max(fitness_array)
-        avg_fitness = np.mean(fitness_array, dtype=np.float64)
-        worst_fitness = np.min(fitness_array)
-        fitness_std = np.std(fitness_array, dtype=np.float64)
+        fitness_array: npt.NDArray[np.float64] = np.array(scores)
+        best_fitness: np.float64 = np.max(fitness_array)
+        avg_fitness: np.float64 = np.mean(fitness_array, dtype=np.float64)
+        worst_fitness: np.float64 = np.min(fitness_array)
+        fitness_std: np.float64 = np.std(fitness_array, dtype=np.float64)
 
         # Tree statistics
-        tree_sizes = [tree.size() for tree in self.population]
-        tree_depths = [tree.depth() for tree in self.population]
-        avg_tree_size = np.mean(tree_sizes, dtype=np.float64)
-        avg_tree_depth = np.mean(tree_depths, dtype=np.float64)
-        min_tree_size = min(tree_sizes)
-        max_tree_size = max(tree_sizes)
+        tree_sizes: List[int] = [len(tree) for tree in self.population]
+        tree_depths: List[int] = [tree.depth() for tree in self.population]
+        avg_tree_size: np.float64 = np.mean(tree_sizes, dtype=np.float64)
+        avg_tree_depth: np.float64 = np.mean(tree_depths, dtype=np.float64)
+        min_tree_size: int = min(tree_sizes)
+        max_tree_size: int = max(tree_sizes)
 
         # Population diversity
-        unique_expressions = len(set(str(tree) for tree in self.population))
-        population_diversity = unique_expressions / len(self.population)
+        unique_expressions: int = len(set(str(tree) for tree in self.population))
+        population_diversity: float = unique_expressions / len(self.population)
 
         # Operator distribution
-        operator_counts = {}
+        operator_counts: dict[str, int] = {}
         for tree in self.population:
-            for node in tree.nodes():
-                op_type = type(node).__name__
+            for node in tree:
+                op_type: str = type(node).__name__
                 operator_counts[op_type] = operator_counts.get(op_type, 0) + 1
         total_nodes = sum(operator_counts.values())
         operator_distribution = {

@@ -1,34 +1,36 @@
-"""Symbolic regression package for genetic programming."""
+"""
+# Symbolic regression package for genetic programming.
 
-from .base import INode, NodeType
-from .config.settings import GeneticParams
+This package provides a genetic programming framework for symbolic regression.
+
+The main class is `GeneticProgram`, which is used to evolve a population of
+expression trees to fit a given dataset.
+
+The package also provides utility functions for setting the global random seed.
+
+Example:
+    ```python
+    from symb_regression import GeneticProgram, set_global_seed
+
+    set_global_seed(42)
+
+    gp = GeneticProgram()
+    best_solution, history = gp.evolve(x, y)
+    ```
+
+Attributes:
+    GeneticProgram: The main class for genetic programming.
+    set_global_seed: Function to set the global random seed.
+
+
+
+
+"""
+
 from .core.genetic_programming import GeneticProgram
-from .core.tree import Node
-from .operators.definitions import BINARY_OPS, UNARY_OPS
-from .utils.data_handler import load_data, split_data
-from .utils.logging_config import setup_logger
-from .utils.metrics import Metrics
-from .utils.plotting import (
-    plot_evolution_metrics,
-    plot_operator_distribution,
-    plot_prediction_analysis,
-    plot_variable_importance,
-)
+from .utils.random import set_global_seed
 
 __all__: list[str] = [
-    "INode",
-    "NodeType",
-    "UNARY_OPS",
-    "BINARY_OPS",
-    "GeneticParams",
-    "Metrics",
-    "Node",
     "GeneticProgram",
-    "load_data",
-    "split_data",
-    "plot_evolution_metrics",
-    "plot_operator_distribution",
-    "plot_prediction_analysis",
-    "plot_variable_importance",
-    "setup_logger",
+    "set_global_seed",
 ]

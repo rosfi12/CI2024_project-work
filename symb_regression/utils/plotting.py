@@ -331,7 +331,7 @@ def visualize_expression_behavior(
     plt.text(
         0.02,
         0.98,
-        f"Expression: {expression.to_pretty_string()}",
+        f"Expression: {expression}",
         transform=plt.gca().transAxes,
         verticalalignment="top",
         bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
