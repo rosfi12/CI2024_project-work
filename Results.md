@@ -97,6 +97,19 @@ Mean Squared Error: -0.064122
 R² Score: 0.000000 (0.0% of variance explained)
 ==================================================
 
+==================================================
+==== SYMBOLIC REGRESSION RESULTS - problem_5 =====
+==================================================
+Best Expression Found: 0.000
+Final Fitness: 0.298211
+Execution Time: 24.72 seconds
+Generations: 300
+==================================================
+Performance Metrics:
+Mean Squared Error: -0.064122
+R² Score: 0.000000 (0.0% of variance explained)
+==================================================
+
 # Problem_6
 Best Expression Found: 
 x1 - sin(sin(arcsin(x1))) + x1 - x0 * x0 max arcsin(x0) / (x0 + abs(sqrt(x0)))
@@ -118,6 +131,30 @@ Generations: 300
 Performance Metrics:
 Mean Squared Error: 0.535917
 R² Score: 330.034956 (33003.5% of variance explained)
+==================================================
+==================================================
+==== SYMBOLIC REGRESSION RESULTS - problem_7 =====
+==================================================
+Best Expression Found: cosh(|x1 - (sqrt(arcsin(((|(3.986 ** x1) - (x0 - x0)| - cos((x0 * x0))) // (((x0 // -4.586) / (0.925 // -3.983)) * x1)))) * 2.612)|)
+Final Fitness: 0.0939783
+Execution Time: 346.80 seconds
+Generations: 200
+==================================================
+Performance Metrics:
+Mean Squared Error: 0.133674
+R² Score: 616.092331 (61609.2% of variance explained)
+==================================================
+==================================================
+==== SYMBOLIC REGRESSION RESULTS - problem_7 =====
+==================================================
+Best Expression Found: exp((abs(2.316) ** log2((x0 + x1))))
+Final Fitness: 0.336232
+Execution Time: 169.34 seconds
+Generations: 350
+==================================================
+Performance Metrics:
+Mean Squared Error: 0.488340
+R² Score: 363.870192 (36387.0% of variance explained)
 ==================================================
 
 # Problem_8

@@ -1,6 +1,5 @@
 import logging
 import random
-import time
 import warnings
 from collections import defaultdict
 from logging import Logger
@@ -103,11 +102,11 @@ class GeneticProgram:
 
     def calculate_fitness(
         self, tree: Node, x: npt.NDArray[np.float64], y: npt.NDArray[np.float64]
-    ) -> np.float64:
+    ) -> Tuple[np.float64, Tuple[np.float64, np.float64]]:
         try:
             pred = tree.evaluate(x, self.config)
             if np.any(np.isnan(pred)) or np.any(np.isinf(pred)):
-                return np.float64(-np.inf)
+                return np.float64(-np.inf), (np.float64(np.inf), np.float64(-np.inf))
 
             # Accuracy metrics with improved scaling
             mse: np.float64 = np.mean((pred - y) ** 2).astype(np.float64)
@@ -158,7 +157,11 @@ class GeneticProgram:
 
             # Calculate variable usage penalty
             unused_vars = self.config.n_variables - len(used_vars)
-            var_penalty = self.params.unused_var_coefficient * unused_vars if unused_vars > 0 else 0
+            var_penalty = (
+                self.params.unused_var_coefficient * unused_vars
+                if unused_vars > 0
+                else 0
+            )
 
             # Combined penalties with configurable weights
             total_penalty = (
@@ -174,10 +177,10 @@ class GeneticProgram:
             # Final fitness with adaptive penalty
             fitness = accuracy_score / (1 + total_penalty)
 
-            return np.float64(np.clip(fitness, 0, 1))
+            return np.float64(np.clip(fitness, 0, 1)), (np.float64(mse), np.float64(r2))
 
         except (ValueError, RuntimeWarning, OverflowError):
-            return np.float64(-np.inf)
+            return np.float64(-np.inf), (np.float64(np.inf), np.float64(-np.inf))
 
     def tournament_selection(self, scores: List[np.float64]) -> Node:
         indices = np.array(
@@ -232,14 +235,15 @@ class GeneticProgram:
 
     def _evaluate_population(
         self, x: npt.NDArray[np.float64], y: npt.NDArray[np.float64]
-    ) -> Tuple[List[np.float64], List[Node], float]:
-        eval_start = time.perf_counter()
+    ) -> Tuple[List[np.float64], List[Node], Tuple[np.float64, np.float64]]:
         scores = []
         valid_population = []
 
+        # mse, r2
+        metrics = (np.float64(np.inf), np.float64(-np.inf))
         for tree in self.population:
             try:
-                fitness = self.calculate_fitness(tree, x, y)
+                fitness, metrics = self.calculate_fitness(tree, x, y)
                 if not np.isneginf(fitness):
                     scores.append(fitness)
                     valid_population.append(tree)
@@ -247,8 +251,7 @@ class GeneticProgram:
                 print(f"Error evaluating tree: {e}")
                 continue
 
-        eval_time = time.perf_counter() - eval_start
-        return scores, valid_population, eval_time
+        return scores, valid_population, metrics
 
     def _apply_elitism(
         self, scores: List[np.float64], new_population: List[Node]
@@ -315,7 +318,6 @@ class GeneticProgram:
     ) -> Tuple[Node, List[Metrics]]:
         best_fitness: np.float64 = np.float64(-np.inf)
         generations_without_improvement = 0
-        start_time = time.perf_counter()
 
         pbar = tqdm(
             range(self.params.generations),
@@ -325,10 +327,9 @@ class GeneticProgram:
         )
 
         for gen in pbar:
-            gen_start_time = time.perf_counter()
             logger.debug(f"Generation {gen + 1}/{self.params.generations}")
 
-            scores, valid_population, eval_time = self._evaluate_population(x, y)
+            scores, valid_population, metrics = self._evaluate_population(x, y)
             self.population = valid_population
 
             if not scores:
@@ -338,6 +339,7 @@ class GeneticProgram:
             best_fitness, generations_without_improvement = self._update_best_solution(
                 scores,
                 best_fitness,
+                metrics,
                 generations_without_improvement,
                 pbar,
             )
@@ -354,7 +356,7 @@ class GeneticProgram:
             self.population = new_population[: self.params.population_size]
 
             if collect_history:
-                self._update_metrics(gen, start_time, scores, gen_start_time, eval_time)
+                self._update_metrics(gen, scores)
 
         if self.best_solution is None:
             raise ValueError("No solution found")
@@ -365,6 +367,7 @@ class GeneticProgram:
         self,
         scores: List[np.float64],
         best_fitness: np.float64,
+        metrics: Tuple[np.float64, ...],
         generations_without_improvement: int,
         pbar: tqdm,
     ) -> Tuple[np.float64, int]:
@@ -375,7 +378,9 @@ class GeneticProgram:
             best_fitness = current_best
             self.best_solution = self.population[best_idx].copy()
             generations_without_improvement = 0
-            pbar.set_postfix_str(f"Best fitness: {best_fitness:.4f}")
+            pbar.set_postfix_str(
+                f"Fitness: {best_fitness:.4f} | MSE: {metrics[0]:.4f} | R²: {metrics[1]:.2%}"
+            )
             pbar.write(
                 f"Best fitness: {best_fitness:.4f} - Expression: {self.best_solution}"
             )
@@ -387,10 +392,7 @@ class GeneticProgram:
     def _update_metrics(
         self,
         generation: int,
-        start_time: float,
         scores: List[np.float64],
-        gen_start_time: float,
-        eval_time: float,
     ) -> None:
         # Fitness statistics
         fitness_array: npt.NDArray[np.float64] = np.array(scores)
@@ -404,47 +406,19 @@ class GeneticProgram:
         tree_depths: List[int] = [tree.depth() for tree in self.population]
         avg_tree_size: np.float64 = np.mean(tree_sizes, dtype=np.float64)
         avg_tree_depth: np.float64 = np.mean(tree_depths, dtype=np.float64)
-        min_tree_size: int = min(tree_sizes)
-        max_tree_size: int = max(tree_sizes)
-
-        # Population diversity
-        unique_expressions: int = len(set(str(tree) for tree in self.population))
-        population_diversity: float = unique_expressions / len(self.population)
-
-        # Operator distribution
-        operator_counts: dict[str, int] = {}
-        for tree in self.population:
-            for node in tree:
-                op_type: str = type(node).__name__
-                operator_counts[op_type] = operator_counts.get(op_type, 0) + 1
-        total_nodes = sum(operator_counts.values())
-        operator_distribution = {
-            op: count / total_nodes for op, count in operator_counts.items()
-        }
-
-        # Timing
-        evolution_time = time.perf_counter() - gen_start_time
-
         # Best expression
         best_idx = scores.index(best_fitness)
         best_expression = str(self.population[best_idx])
 
         metrics = Metrics(
             generation=generation,
-            execution_time=time.perf_counter() - start_time,
             best_fitness=best_fitness,
             avg_fitness=avg_fitness,
             worst_fitness=worst_fitness,
             fitness_std=fitness_std,
             best_expression=best_expression,
-            population_diversity=population_diversity,
-            operator_distribution=operator_distribution,
             avg_tree_size=avg_tree_size,
             avg_tree_depth=avg_tree_depth,
-            min_tree_size=min_tree_size,
-            max_tree_size=max_tree_size,
-            eval_time=eval_time,
-            evolution_time=evolution_time,
         )
 
         self.metrics_history.append(metrics)

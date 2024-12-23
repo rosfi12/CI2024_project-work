@@ -189,62 +189,88 @@ def plot_expression_tree(root_node):
     plt.show()
 
 
-def plot_3d_data(
+def plot_regression_data(
     x: np.ndarray,
     y: np.ndarray,
     best_solution: Optional[Node] = None,
-    config: SymbolicConfig = SymbolicConfig.create(),
+    symb_config: SymbolicConfig = SymbolicConfig.create(),
 ) -> None:
     """
-    Create a 3D visualization of the regression problem.
+    Plot regression data and predictions for both 1D and 2D inputs.
 
     Args:
-        x: Input data (n_samples, 2)
-        y: Target values (n_samples,)
-        best_solution: Optional best solution found
-        ax: Optional axes to plot on
-        config: Symbolic configuration used
+        x: Input data array (1D or 2D)
+        y: Target values array
+        best_solution: Optional solution to visualize
+        symb_config: Configuration for symbolic regression
     """
-
-    fig = plt.figure(figsize=(12, 8))
-    ax = fig.add_subplot(111, projection="3d")
-
-    # Scatter plot of actual data points
-    scatter = ax.scatter(
-        x[:, 0], x[:, 1], y, c=y, cmap="viridis", alpha=0.6, label="Actual Data"
-    )
-
-    # If we have a solution, plot the predicted surface
+    # Calculate predictions if solution exists
     if best_solution is not None:
-        # Create a meshgrid for surface plotting
-        x0_range = np.linspace(min(x[:, 0]), max(x[:, 0]), 50)
-        x1_range = np.linspace(min(x[:, 1]), max(x[:, 1]), 50)
-        X0, X1 = np.meshgrid(x0_range, x1_range)
+        pred = best_solution.evaluate(x, symb_config)
+        relative_error = np.abs(y - pred) / (np.abs(y) + 1e-10)
 
-        # Prepare input for prediction
-        X_pred = np.column_stack((X0.ravel(), X1.ravel()))
+    # Handle 1D data
+    if x.ndim == 1 or (x.ndim == 2 and x.shape[1] == 1):
+        fig, ax = plt.subplots(figsize=(10, 6))
+        x_plot = x.ravel()
 
-        # Get predictions
-        Y_pred = best_solution.evaluate(X_pred, config)
-        Z = Y_pred.reshape(X0.shape)
+        if best_solution is not None:
+            scatter = ax.scatter(
+                x_plot,
+                y,
+                c=relative_error,  # type: ignore
+                cmap="RdYlBu_r",
+                alpha=0.6,
+            )
+            ax.plot(x_plot, pred, "r-", label="Prediction", alpha=0.8)  # type: ignore
+            fig.colorbar(scatter, label="Relative Error")
+            ax.set_title("Regression Results with Predictions")
+        else:
+            scatter = ax.scatter(x_plot, y, c=y, cmap="viridis", alpha=0.6)
+            fig.colorbar(scatter, label="Target Values")
+            ax.set_title("Data Distribution")
 
-        # Plot prediction surface
-        _ = ax.plot_surface(
-            X0, X1, Z, cmap="viridis", alpha=0.3, label="Predicted Surface"
-        )
+        ax.set_xlabel("X")
+        ax.set_ylabel("Y")
+        ax.legend()
 
-    # Customize the plot
-    ax.set_xlabel("X₁")
-    ax.set_ylabel("X₂")
-    ax.set_zlabel("Y")
-    ax.set_title("3D Visualization of Regression Problem")
+    # Handle 2D data
+    elif x.ndim == 2 and x.shape[1] == 2:
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111, projection="3d")
 
-    # Add colorbar
-    fig.colorbar(scatter, label="Target Values")
+        if best_solution is not None:
+            scatter = ax.scatter(
+                x[:, 0],
+                x[:, 1],
+                y,
+                c=relative_error,  # type: ignore
+                cmap="RdYlBu_r",
+                alpha=0.6,
+            )
 
-    # Adjust the view
-    ax.view_init(elev=20, azim=45)
+            # Add prediction surface
+            x0_range = np.linspace(min(x[:, 0]), max(x[:, 0]), 50)
+            x1_range = np.linspace(min(x[:, 1]), max(x[:, 1]), 50)
+            X0, X1 = np.meshgrid(x0_range, x1_range)
+            X_pred = np.column_stack((X0.ravel(), X1.ravel()))
+            Z = best_solution.evaluate(X_pred, symb_config).reshape(X0.shape)
+            _ = ax.plot_surface(X0, X1, Z, alpha=0.3, cmap="viridis")  # type: ignore
+
+            fig.colorbar(scatter, label="Relative Error")
+            ax.set_title("Regression Results with Predictions")
+        else:
+            scatter = ax.scatter(x[:, 0], x[:, 1], y, c=y, cmap="viridis", alpha=0.6)
+            fig.colorbar(scatter, label="Target Values")
+            ax.set_title("Data Distribution")
+
+        ax.set_xlabel("X₁")
+        ax.set_ylabel("X₂")
+        ax.set_zlabel("Y")  # type: ignore
+        ax.view_init(elev=20, azim=45)  # type: ignore
+
+    else:
+        raise ValueError(f"Unexpected input shape: {x.shape}")
+
     plt.tight_layout()
-
     plt.show()
-    return None

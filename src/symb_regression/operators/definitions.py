@@ -326,11 +326,11 @@ BASE_OPERATORS: Dict[str, OperatorSpec] = {
         precedence=4,
         is_unary=True,
     ),
-    # "sigmoid": OperatorSpec(
-    #     function=lambda x: 1 / (1 + np.exp(np.clip(-x, -MAX_EXP, MAX_EXP))),
-    #     precedence=4,
-    #     is_unary=True,
-    # ),
+    "sigmoid": OperatorSpec(
+        function=lambda x: 1 / (1 + np.exp(np.clip(-x, -MAX_EXP, MAX_EXP))),
+        precedence=4,
+        is_unary=True,
+    ),
     "reciprocal": OperatorSpec(
         function=lambda x: np.divide(1, np.where(np.abs(x) < MIN_FLOAT, MIN_FLOAT, x)),
         precedence=4,
