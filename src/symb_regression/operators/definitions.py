@@ -1,16 +1,16 @@
 # All the clip function ensure that no value is outside the safe range
 # The safe_power function ensures that the power operation is safe
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import (
     Any,
     Callable,
     Dict,
     Literal,
-    NotRequired,
     Optional,
+    Self,
+    Set,
     Tuple,
-    TypedDict,
     TypeVar,
     Union,
     cast,
@@ -63,11 +63,12 @@ class OperatorRepresentation:
         return str(self.symbol)
 
 
-class OperatorSpec(TypedDict):
+@dataclass(frozen=True)
+class OperatorSpec:
     function: OperatorFunction
     precedence: int
     is_unary: bool
-    representation: NotRequired[Optional[OperatorRepresentation]]
+    representation: Optional[OperatorRepresentation] = field(default=None)
 
 
 @dataclass(frozen=True)
@@ -100,8 +101,8 @@ class Operator:
 
 class OperatorRegistry:
     def __init__(self, precision_type: type = FLOAT_PRECISION) -> None:
-        self._operators: Dict[str, Operator] = {}
-        self._precision_type: type = precision_type
+        self.operators: Dict[str, Operator] = {}
+        self.precision_type: type = precision_type
 
     def create_default_representation(
         self, name: str, is_unary: bool
@@ -117,9 +118,9 @@ class OperatorRegistry:
         if is_unary:
 
             def wrapped_unary(x: npt.NDArray[Any]) -> npt.NDArray[FLOAT_PRECISION]:
-                x_cast: npt.NDArray[FLOAT_PRECISION] = x.astype(self._precision_type)
+                x_cast: npt.NDArray[FLOAT_PRECISION] = x.astype(self.precision_type)
                 result: npt.NDArray[FLOAT_PRECISION] = cast(UnaryOperator, func)(x_cast)
-                return result.astype(self._precision_type)
+                return result.astype(self.precision_type)
 
             return cast(OperatorFunction, wrapped_unary)
         else:
@@ -127,12 +128,12 @@ class OperatorRegistry:
             def wrapped_binary(
                 x: npt.NDArray[Any], y: npt.NDArray[Any]
             ) -> npt.NDArray[FLOAT_PRECISION]:
-                x_cast: npt.NDArray[FLOAT_PRECISION] = x.astype(self._precision_type)
-                y_cast: npt.NDArray[FLOAT_PRECISION] = y.astype(self._precision_type)
+                x_cast: npt.NDArray[FLOAT_PRECISION] = x.astype(self.precision_type)
+                y_cast: npt.NDArray[FLOAT_PRECISION] = y.astype(self.precision_type)
                 result: npt.NDArray[FLOAT_PRECISION] = cast(BinaryOperator, func)(
                     x_cast, y_cast
                 )
-                return result.astype(self._precision_type)
+                return result.astype(self.precision_type)
 
             return cast(OperatorFunction, wrapped_binary)
 
@@ -145,47 +146,45 @@ class OperatorRegistry:
             is_unary=operator.is_unary,
             representation=operator.representation,
         )
-        self._operators[operator.name] = wrapped_op
+        self.operators[operator.name] = wrapped_op
 
     def register_many(self, operators: Dict[str, OperatorSpec]) -> None:
         """Bulk register operators from dictionary specification"""
         for name, spec in operators.items():
             operator = Operator(
                 name=name,
-                function=spec["function"],
-                precedence=spec["precedence"],
-                is_unary=spec["is_unary"],
-                representation=spec.get("representation"),
+                function=spec.function,
+                precedence=spec.precedence,
+                is_unary=spec.is_unary,
+                representation=spec.representation,
             )
             self.register(operator)
 
     @property
     def unary_ops(self) -> Dict[str, Callable]:
-        return {
-            name: op.function for name, op in self._operators.items() if op.is_unary
-        }
+        return {name: op.function for name, op in self.operators.items() if op.is_unary}
 
     @property
     def binary_ops(self) -> Dict[str, Callable]:
         return {
-            name: op.function for name, op in self._operators.items() if not op.is_unary
+            name: op.function for name, op in self.operators.items() if not op.is_unary
         }
 
     @property
     def representations(self) -> Dict[str, OperatorRepresentation]:
         return {
             name: op.representation
-            for name, op in self._operators.items()
+            for name, op in self.operators.items()
             if op.representation is not None
         }
 
     @property
     def precedence(self) -> Dict[str, int]:
-        return {name: op.precedence for name, op in self._operators.items()}
+        return {name: op.precedence for name, op in self.operators.items()}
 
     def validate(self) -> None:
         """Runtime validation of operator completeness"""
-        for op in self._operators.values():
+        for op in self.operators.values():
             if not callable(op.function):
                 raise ValueError(f"Operator {op.name} has invalid function")
             if not isinstance(op.precedence, int):
@@ -223,6 +222,15 @@ def safe_tan(x: npt.NDArray[FLOAT_PRECISION]) -> npt.NDArray[FLOAT_PRECISION]:
     return np.tan(clipped)
 
 
+def safe_atan2(
+    x1_clipped: npt.NDArray[FLOAT_PRECISION], x2: npt.NDArray[FLOAT_PRECISION]
+) -> npt.NDArray[FLOAT_PRECISION]:
+    """Safe tangent function with clipping"""
+    x1_clipped = np.clip(x1_clipped, -np.pi + 1e-10, np.pi - 1e-10)
+    x2_clipped = np.clip(x2, -np.pi + 1e-10, np.pi - 1e-10)
+    return np.atan2(x1_clipped, x2_clipped)
+
+
 def safe_arcsin(x: npt.NDArray[FLOAT_PRECISION]) -> npt.NDArray[FLOAT_PRECISION]:
     """Safe arcsine function with clipping"""
     clipped = np.clip(x, -1, 1)
@@ -241,217 +249,166 @@ def safe_cosh(x: npt.NDArray[FLOAT_PRECISION]) -> npt.NDArray[FLOAT_PRECISION]:
     return np.cosh(clipped)
 
 
-# UNARY_OPS: Dict[str, Callable] = {
-#     "sin": np.sin,
-#     "cos": np.cos,
-#     "tan": lambda x: np.tan(np.clip(x, -np.pi / 2 + 1e-10, np.pi / 2 - 1e-10)),
-#     "arcsin": lambda x: np.arcsin(np.clip(x, -1, 1)),
-#     "sinh": lambda x: np.sinh(np.clip(x, -MAX_EXP, MAX_EXP)),
-#     "cosh": lambda x: np.cosh(np.clip(x, -MAX_EXP, MAX_EXP)),
-#     "sign": np.sign,
-#     "exp": lambda x: np.exp(np.clip(x, -MAX_EXP, MAX_EXP)),
-#     "log": lambda x: np.log(np.abs(x) + MIN_FLOAT),
-#     "sqrt": lambda x: np.sqrt(np.maximum(0, x)),
-#     "sigmoid": lambda x: 1 / (1 + np.exp(np.clip(-x, -MAX_EXP, MAX_EXP))),
-#     "abs": np.abs,
-#     "reciprocal": lambda x: np.divide(1, np.where(np.abs(x) < MIN_FLOAT, MIN_FLOAT, x)),
-# }
-
-# BINARY_OPS: Dict[str, Callable] = {
-#     "+": lambda x, y: np.clip(x + y, -MAX_FLOAT, MAX_FLOAT),
-#     "-": lambda x, y: np.clip(x - y, -MAX_FLOAT, MAX_FLOAT),
-#     "*": lambda x, y: np.clip(x * y, -MAX_FLOAT, MAX_FLOAT),
-#     "/": lambda x, y: np.divide(x, np.where(np.abs(y) < MIN_FLOAT, MIN_FLOAT, y)),
-#     "**": safe_power,
-#     "%": lambda x, y: np.mod(x, np.where(np.abs(y) < MIN_FLOAT, MIN_FLOAT, y)),
-#     "min": lambda x, y: np.minimum(
-#         np.clip(x, -MAX_FLOAT, MAX_FLOAT), np.clip(y, -MAX_FLOAT, MAX_FLOAT)
-#     ),
-#     "max": lambda x, y: np.maximum(
-#         np.clip(x, -MAX_FLOAT, MAX_FLOAT), np.clip(y, -MAX_FLOAT, MAX_FLOAT)
-#     ),
-#     "abs_diff": lambda x, y: np.abs(x - y),
-#     "//": lambda x, y: np.floor_divide(
-#         x, np.where(np.abs(y) < MIN_FLOAT, MIN_FLOAT, y)
-#     ),
-# }
-
-# OP_REPRESENTATIONS = {
-#     "+": "+",
-#     "-": "-",
-#     "*": "*",
-#     "/": "/",
-#     "**": "**",
-#     "%": "%",
-#     "//": "//",
-#     "min": "min",
-#     "max": "max",
-#     "abs_diff": ("|", "-", "|"),
-#     "sin": "sin",
-#     "cos": "cos",
-#     "exp": "exp",
-#     "log": "log",
-# }
-
-# OPERATOR_PRECEDENCE: Dict[str, int] = {
-#     "+": 1,
-#     "-": 1,
-#     "min": 1,
-#     "max": 1,
-#     "*": 2,
-#     "/": 2,
-#     "//": 2,
-#     "%": 2,
-#     "abs_diff": 3,
-#     "**": 4,
-#     "sin": 4,
-#     "cos": 4,
-#     "exp": 4,
-#     "log": 4,
-# }
-
 BASE_OPERATORS: Dict[str, OperatorSpec] = {
     # Unary operators - highest precedence (4)
-    "sin": {
-        "function": np.sin,
-        "precedence": 4,
-        "is_unary": True,
-    },
-    "cos": {
-        "function": np.cos,
-        "precedence": 4,
-        "is_unary": True,
-    },
-    "tan": {
-        "function": safe_tan,
-        "precedence": 4,
-        "is_unary": True,
-    },
-    "arcsin": {
-        "function": safe_arcsin,
-        "precedence": 4,
-        "is_unary": True,
-    },
-    "sinh": {
-        "function": safe_sinh,
-        "precedence": 4,
-        "is_unary": True,
-    },
-    "cosh": {
-        "function": safe_cosh,
-        "precedence": 4,
-        "is_unary": True,
-    },
-    "exp": {
-        "function": lambda x: np.exp(np.clip(x, -MAX_EXP, MAX_EXP)),
-        "precedence": 4,
-        "is_unary": True,
-    },
-    "log": {
-        "function": lambda x: np.log(np.abs(x) + MIN_FLOAT),
-        "precedence": 4,
-        "is_unary": True,
-    },
-    "sqrt": {
-        "function": lambda x: np.sqrt(np.maximum(0, x)),
-        "precedence": 4,
-        "is_unary": True,
-    },
-    "abs": {
-        "function": np.abs,
-        "precedence": 4,
-        "is_unary": True,
-    },
-    "sign": {
-        "function": np.sign,
-        "precedence": 4,
-        "is_unary": True,
-    },
-    "sigmoid": {
-        "function": lambda x: 1 / (1 + np.exp(np.clip(-x, -MAX_EXP, MAX_EXP))),
-        "precedence": 4,
-        "is_unary": True,
-    },
-    "reciprocal": {
-        "function": lambda x: np.divide(
-            1, np.where(np.abs(x) < MIN_FLOAT, MIN_FLOAT, x)
+    "sin": OperatorSpec(
+        function=np.sin,
+        precedence=4,
+        is_unary=True,
+    ),
+    "cos": OperatorSpec(
+        function=np.cos,
+        precedence=4,
+        is_unary=True,
+    ),
+    "tan": OperatorSpec(
+        function=safe_tan,
+        precedence=4,
+        is_unary=True,
+    ),
+    "atan2": OperatorSpec(
+        function=safe_atan2,
+        precedence=4,
+        is_unary=False,
+    ),
+    "cot": OperatorSpec(
+        function=lambda x: np.clip(
+            1 / np.tan(np.where(np.abs(x) < MIN_FLOAT, MIN_FLOAT, x)),
+            -MAX_FLOAT,
+            MAX_FLOAT,
         ),
-        "precedence": 4,
-        "is_unary": True,
-    },
+        precedence=4,
+        is_unary=True,
+        representation=OperatorRepresentation(
+            style=RepresentationStyle.FUNCTION, symbol="cot"
+        ),
+    ),
+    "arcsin": OperatorSpec(
+        function=safe_arcsin,
+        precedence=4,
+        is_unary=True,
+    ),
+    "sinh": OperatorSpec(
+        function=safe_sinh,
+        precedence=4,
+        is_unary=True,
+    ),
+    "cosh": OperatorSpec(
+        function=safe_cosh,
+        precedence=4,
+        is_unary=True,
+    ),
+    "exp": OperatorSpec(
+        function=lambda x: np.exp(np.clip(x, -MAX_EXP, MAX_EXP)),
+        precedence=4,
+        is_unary=True,
+    ),
+    "log": OperatorSpec(
+        function=lambda x: np.log(np.abs(x) + MIN_FLOAT),
+        precedence=4,
+        is_unary=True,
+    ),
+    "log2": OperatorSpec(
+        function=lambda x: np.log2(np.abs(x) + MIN_FLOAT),
+        precedence=4,
+        is_unary=True,
+    ),
+    "sqrt": OperatorSpec(
+        function=lambda x: np.sqrt(np.maximum(0, x)),
+        precedence=4,
+        is_unary=True,
+    ),
+    "abs": OperatorSpec(
+        function=np.abs,
+        precedence=4,
+        is_unary=True,
+    ),
+    "sign": OperatorSpec(
+        function=np.sign,
+        precedence=4,
+        is_unary=True,
+    ),
+    # "sigmoid": OperatorSpec(
+    #     function=lambda x: 1 / (1 + np.exp(np.clip(-x, -MAX_EXP, MAX_EXP))),
+    #     precedence=4,
+    #     is_unary=True,
+    # ),
+    "reciprocal": OperatorSpec(
+        function=lambda x: np.divide(1, np.where(np.abs(x) < MIN_FLOAT, MIN_FLOAT, x)),
+        precedence=4,
+        is_unary=True,
+    ),
     # Binary operators
     # Power and special operations - precedence 3
-    "**": {
-        "function": safe_power,
-        "precedence": 4,
-        "is_unary": False,
-    },
-    "abs_diff": {
-        "function": lambda x, y: np.abs(x - y),
-        "precedence": 3,
-        "is_unary": False,
-        "representation": OperatorRepresentation(
+    "**": OperatorSpec(
+        function=safe_power,
+        precedence=4,
+        is_unary=False,
+    ),
+    "abs_diff": OperatorSpec(
+        function=lambda x, y: np.abs(x - y),
+        precedence=3,
+        is_unary=False,
+        representation=OperatorRepresentation(
             style=RepresentationStyle.CUSTOM, symbol=("|", "-", "|")
         ),
-    },
+    ),
     # Multiplicative operators - precedence 2
-    "*": {
-        "function": lambda x, y: np.clip(x * y, -MAX_FLOAT, MAX_FLOAT),
-        "precedence": 2,
-        "is_unary": False,
-    },
-    "/": {
-        "function": lambda x, y: np.divide(
+    "*": OperatorSpec(
+        function=lambda x, y: np.clip(x * y, -MAX_FLOAT, MAX_FLOAT),
+        precedence=2,
+        is_unary=False,
+    ),
+    "/": OperatorSpec(
+        function=lambda x, y: np.divide(
             x, np.where(np.abs(y) < MIN_FLOAT, MIN_FLOAT, y)
         ),
-        "precedence": 2,
-        "is_unary": False,
-    },
-    "//": {
-        "function": lambda x, y: np.floor_divide(
+        precedence=2,
+        is_unary=False,
+    ),
+    "//": OperatorSpec(
+        function=lambda x, y: np.floor_divide(
             x, np.where(np.abs(y) < MIN_FLOAT, MIN_FLOAT, y)
         ),
-        "precedence": 2,
-        "is_unary": False,
-    },
-    "%": {
-        "function": lambda x, y: np.mod(
-            x, np.where(np.abs(y) < MIN_FLOAT, MIN_FLOAT, y)
-        ),
-        "precedence": 2,
-        "is_unary": False,
-    },
+        precedence=2,
+        is_unary=False,
+    ),
+    "%": OperatorSpec(
+        function=lambda x, y: np.mod(x, np.where(np.abs(y) < MIN_FLOAT, MIN_FLOAT, y)),
+        precedence=2,
+        is_unary=False,
+    ),
     # Additive operators - lowest precedence (1)
-    "+": {
-        "function": lambda x, y: np.clip(x + y, -MAX_FLOAT, MAX_FLOAT),
-        "precedence": 1,
-        "is_unary": False,
-    },
-    "-": {
-        "function": lambda x, y: np.clip(x - y, -MAX_FLOAT, MAX_FLOAT),
-        "precedence": 1,
-        "is_unary": False,
-    },
-    "min": {
-        "function": lambda x, y: np.minimum(
+    "+": OperatorSpec(
+        function=lambda x, y: np.clip(x + y, -MAX_FLOAT, MAX_FLOAT),
+        precedence=1,
+        is_unary=False,
+    ),
+    "-": OperatorSpec(
+        function=lambda x, y: np.clip(x - y, -MAX_FLOAT, MAX_FLOAT),
+        precedence=1,
+        is_unary=False,
+    ),
+    "min": OperatorSpec(
+        function=lambda x, y: np.minimum(
             np.clip(x, -MAX_FLOAT, MAX_FLOAT), np.clip(y, -MAX_FLOAT, MAX_FLOAT)
         ),
-        "precedence": 1,
-        "is_unary": False,
-        "representation": OperatorRepresentation(
+        precedence=1,
+        is_unary=False,
+        representation=OperatorRepresentation(
             style=RepresentationStyle.FUNCTION, symbol="min"
         ),
-    },
-    "max": {
-        "function": lambda x, y: np.maximum(
+    ),
+    "max": OperatorSpec(
+        function=lambda x, y: np.maximum(
             np.clip(x, -MAX_FLOAT, MAX_FLOAT), np.clip(y, -MAX_FLOAT, MAX_FLOAT)
         ),
-        "precedence": 1,
-        "is_unary": False,
-        "representation": OperatorRepresentation(
+        precedence=1,
+        is_unary=False,
+        representation=OperatorRepresentation(
             style=RepresentationStyle.FUNCTION, symbol="max"
         ),
-    },
+    ),
 }
 
 # At the end of the file, after BASE_OPERATORS definition:
@@ -464,6 +421,82 @@ BINARY_OPS = registry.binary_ops
 OPERATOR_PRECEDENCE = registry.precedence
 
 
-def get_var_name(idx: int) -> str:
-    """Generate variable name for given index."""
-    return f"x{idx}"
+class OperatorSet(Enum):
+    MINIMAL = auto()  # +, -, *, /
+    BASIC = auto()  # MINIMAL + **
+    TRIG = auto()  # BASIC + sin, cos
+    ADVANCED = auto()  # All operators
+
+
+OPERATOR_SETS: Dict[OperatorSet, Set[str]] = {
+    OperatorSet.MINIMAL: {"+", "-", "*", "/"},
+    OperatorSet.BASIC: {"+", "-", "*", "/", "**"},
+    OperatorSet.TRIG: {"+", "-", "*", "/", "**", "sin", "cos"},
+    OperatorSet.ADVANCED: set(BASE_OPERATORS.keys()),
+}
+
+
+def get_operator_set(
+    operator_set: OperatorSet | Set[str] = OperatorSet.BASIC,
+) -> Dict[str, OperatorSpec]:
+    """Get a filtered set of operators based on configuration"""
+    if isinstance(operator_set, OperatorSet):
+        selected_ops = OPERATOR_SETS[operator_set]
+    else:
+        selected_ops = operator_set
+
+    # Validate operators exist in BASE_OPERATORS
+    invalid_ops = selected_ops - set(BASE_OPERATORS.keys())
+    if invalid_ops:
+        raise ValueError(f"Invalid operators: {invalid_ops}")
+
+    # Filter BASE_OPERATORS to only include selected ops
+    return {op: spec for op, spec in BASE_OPERATORS.items() if op in selected_ops}
+
+
+@dataclass
+class SymbolicConfig:
+    operators: Dict[str, OperatorSpec]
+    n_variables: int
+
+    @classmethod
+    def create_custom(
+        cls,
+        operator_set: OperatorSet | Set[str],
+        n_variables: int = 1,
+    ) -> Self:
+        operators = get_operator_set(operator_set)
+        return cls(operators, n_variables)
+
+    @classmethod
+    def create_minimal(
+        cls,
+        n_variables: int = 1,
+    ) -> Self:
+        operators = get_operator_set(OperatorSet.MINIMAL)
+        return cls(operators, n_variables)
+
+    @classmethod
+    def create_basic(
+        cls,
+        n_variables: int = 1,
+    ) -> Self:
+        operators = get_operator_set(OperatorSet.BASIC)
+        return cls(operators, n_variables)
+
+    @classmethod
+    def create_trig(
+        cls,
+        n_variables: int = 1,
+    ) -> Self:
+        operators = get_operator_set(OperatorSet.TRIG)
+        return cls(operators, n_variables)
+
+    @classmethod
+    def create(
+        cls,
+        operator_set: OperatorSet | Set[str] = OperatorSet.ADVANCED,
+        n_variables: int = 1,
+    ) -> Self:
+        operators = get_operator_set(operator_set)
+        return cls(operators, n_variables)

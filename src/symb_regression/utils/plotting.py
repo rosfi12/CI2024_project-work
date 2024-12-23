@@ -6,6 +6,7 @@ import numpy as np
 from matplotlib.axes import Axes
 
 from symb_regression.core.tree import Node
+from symb_regression.operators.definitions import SymbolicConfig
 
 
 def plot_evolution_metrics(metrics_history: List[Any], ax=None) -> None:
@@ -14,12 +15,12 @@ def plot_evolution_metrics(metrics_history: List[Any], ax=None) -> None:
     max_gen = max(generations)
     best_fitness = [m.best_fitness for m in metrics_history]
     best_gen = generations[np.argmax(best_fitness)]
-    #quarter_gens = [int(max_gen * x) for x in [0, 0.25, 0.5, 0.75, 1.0]]
+    # quarter_gens = [int(max_gen * x) for x in [0, 0.25, 0.5, 0.75, 1.0]]
 
-    #fig = plt.figure(figsize=(15, 10))
+    # fig = plt.figure(figsize=(15, 10))
 
     # 1. Fitness Evolution (top left)
-    #plt = plt.subplot(221)
+    # plt = plt.subplot(221)
     if ax is None:
         ax = plt.gca()
 
@@ -37,7 +38,7 @@ def plot_evolution_metrics(metrics_history: List[Any], ax=None) -> None:
     ax.legend()
     ax.grid(True)
 
-    '''# 2. Population Diversity (top right)
+    """# 2. Population Diversity (top right)
     ax2 = plt.subplot(222)
     diversity = [m.population_diversity for m in metrics_history]
     ax2.plot(generations, diversity, "b-", linewidth=2)
@@ -82,10 +83,10 @@ def plot_evolution_metrics(metrics_history: List[Any], ax=None) -> None:
         summary_text,
         fontsize=10,
         bbox=dict(facecolor="white", alpha=0.8),
-    )'''
+    )"""
 
-    #plt.tight_layout()
-    #plt.show()
+    # plt.tight_layout()
+    # plt.show()
 
 
 def plot_operator_distribution(ax: Axes, operator_dist: dict) -> None:
@@ -140,8 +141,9 @@ def plot_prediction_analysis(
     expression: Node,
     x: np.ndarray,
     y: np.ndarray,
-    title: str = "Expression Evaluation", 
-    ax=None
+    title: str = "Expression Evaluation",
+    ax=None,
+    config: SymbolicConfig = SymbolicConfig.create(),
 ) -> Tuple[np.float64, np.float64]:
     """
     Evaluate a symbolic expression against dataset and visualize results.
@@ -156,7 +158,7 @@ def plot_prediction_analysis(
         Tuple containing (mse, r2_score)
     """
     # Calculate predictions
-    y_pred = expression.evaluate(x)
+    y_pred = expression.evaluate(x, config)
 
     # Calculate metrics
     mse = np.mean((y - y_pred) ** 2).astype(np.float64)
@@ -165,7 +167,7 @@ def plot_prediction_analysis(
     )
 
     # Create figure
-    #fig, (plt, ax2) = plt.subplots(1, 2, figsize=(15, 5))
+    # fig, (plt, ax2) = plt.subplots(1, 2, figsize=(15, 5))
     if ax is None:
         ax = plt.gca()
 
@@ -198,7 +200,7 @@ def plot_prediction_analysis(
         bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
     )
 
-    '''# Plot residuals
+    """# Plot residuals
     residuals = y - y_pred
     ax2.scatter(y_pred, residuals, alpha=0.5)
     ax2.axhline(y=0, color="r", linestyle="--")
@@ -220,17 +222,21 @@ def plot_prediction_analysis(
         transform=ax2.transAxes,
         verticalalignment="top",
         bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
-    )'''
+    )"""
 
-    #ax.suptitle(title)
-    #plt.tight_layout()
-    #plt.show()
+    # ax.suptitle(title)
+    # plt.tight_layout()
+    # plt.show()
 
     return mse, r2
 
 
 def plot_variable_importance(
-    expression: Node, x: np.ndarray, y: np.ndarray, n_samples: int = 1000
+    expression: Node,
+    x: np.ndarray,
+    y: np.ndarray,
+    n_samples: int = 1000,
+    config: SymbolicConfig = SymbolicConfig.create(),
 ) -> None:
     """
     Analyze and visualize the importance of each variable.
@@ -242,7 +248,7 @@ def plot_variable_importance(
         n_samples: Number of samples for sensitivity analysis
     """
     n_vars = x.shape[1] if x.ndim > 1 else 1
-    base_pred = expression.evaluate(x)
+    base_pred = expression.evaluate(x, config)
     sensitivities = []
 
     # Perform sensitivity analysis
@@ -255,7 +261,7 @@ def plot_variable_importance(
             std = np.std(x)
             x_perturbed += np.random.normal(0, std, size=len(x))
 
-        perturbed_pred = expression.evaluate(x_perturbed)
+        perturbed_pred = expression.evaluate(x_perturbed, config)
         sensitivity = np.mean(np.abs(perturbed_pred - base_pred))
         sensitivities.append(sensitivity)
 
@@ -283,6 +289,7 @@ def visualize_expression_behavior(
     y: np.ndarray,
     variable_idx: int = 0,
     n_points: int = 100,
+    config: SymbolicConfig = SymbolicConfig.create(),
 ) -> None:
     """
     Visualize how the expression behaves across the range of a specific variable.
@@ -310,7 +317,7 @@ def visualize_expression_behavior(
         x_pred = x_range
 
     # Calculate predictions
-    y_pred = expression.evaluate(x_pred)
+    y_pred = expression.evaluate(x_pred, config)
 
     # Plot
     plt.figure(figsize=(12, 6))
@@ -341,11 +348,8 @@ def visualize_expression_behavior(
     plt.show()
 
 
-
 def plot_expression_tree(root_node):
-
     import matplotlib.pyplot as plt
-    import networkx as nx
 
     G = nx.DiGraph()
     nodes_list = []
@@ -364,23 +368,35 @@ def plot_expression_tree(root_node):
 
     collect_nodes(root_node)
 
-    def hierarchical_layout(graph, root=None, width=4.0, vert_gap=1.0, vert_loc=0, xcenter=0.5):
+    def hierarchical_layout(
+        graph, root=None, width=4.0, vert_gap=1.0, vert_loc=0, xcenter=0.5
+    ):
         pos = {}  # dictionary to store node positions
 
-        def _hierarchy_pos(G, root, width, vert_gap, vert_loc, xcenter, pos, parent=None, parsed=[]):
+        def _hierarchy_pos(
+            G, root, width, vert_gap, vert_loc, xcenter, pos, parent=None, parsed=[]
+        ):
             if root not in parsed:
                 parsed.append(root)
                 neighbors = list(G.neighbors(root))
                 if not neighbors:  # leaf node
                     pos[root] = (xcenter, vert_loc)
                 else:
-                    dx = width / len(neighbors) 
+                    dx = width / len(neighbors)
                     nextx = xcenter - width / 2 - dx / 2
                     for neighbor in neighbors:
                         nextx += dx
-                        pos = _hierarchy_pos(G, neighbor, width=dx, vert_gap=vert_gap,
-                                             vert_loc=vert_loc - vert_gap, xcenter=nextx,
-                                             pos=pos, parent=root, parsed=parsed)
+                        pos = _hierarchy_pos(
+                            G,
+                            neighbor,
+                            width=dx,
+                            vert_gap=vert_gap,
+                            vert_loc=vert_loc - vert_gap,
+                            xcenter=nextx,
+                            pos=pos,
+                            parent=root,
+                            parsed=parsed,
+                        )
                 pos[root] = (xcenter, vert_loc)
             return pos
 
@@ -390,7 +406,15 @@ def plot_expression_tree(root_node):
     pos = hierarchical_layout(G, root=root_id)
 
     # Draw nodes and edges
-    nx.draw(G, pos, with_labels=False, node_size=500, node_color="#ADD8E6", edge_color="#708090", alpha=0.9)
+    nx.draw(
+        G,
+        pos,
+        with_labels=False,
+        node_size=500,
+        node_color="#ADD8E6",
+        edge_color="#708090",
+        alpha=0.9,
+    )
 
     # Add labels
     labels = {}
@@ -402,6 +426,8 @@ def plot_expression_tree(root_node):
         else:
             labels[id(n)] = "None"
 
-    nx.draw_networkx_labels(G, pos, labels, font_size=10, font_color="#4B0082", font_weight="bold")
+    nx.draw_networkx_labels(
+        G, pos, labels, font_size=10, font_color="#4B0082", font_weight="bold"
+    )
     plt.title("Expression Tree", fontsize=16, fontweight="bold")
     plt.show()
