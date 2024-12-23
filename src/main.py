@@ -64,6 +64,7 @@ def run_symbolic_regression(
             max_tree_size=15,
             size_penalty_threshold=5,  # Size at which penalties start
             parsimony_coefficient=0.1,  # Controls size penalty weight
+            unused_var_coefficient=0.5,  # Coefficient for unused variable penalty
         )
 
     if debug:
@@ -123,7 +124,7 @@ def run_symbolic_regression(
 # Load and process data
 PROBLEM_DIR = os.getcwd()
 DATA_DIR = os.path.join(PROBLEM_DIR, "data")
-PROBLEM = "problem_3"
+PROBLEM = "problem_4"
 x, y = load_data(DATA_DIR, PROBLEM, show_stats=True)
 x_train, x_val, y_train, y_val = split_data(x, y, train_size=0.1)
 print("Done")

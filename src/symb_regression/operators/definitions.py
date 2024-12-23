@@ -279,9 +279,7 @@ BASE_OPERATORS: Dict[str, OperatorSpec] = {
         ),
         precedence=4,
         is_unary=True,
-        representation=OperatorRepresentation(
-            style=RepresentationStyle.FUNCTION, symbol="cot"
-        ),
+        
     ),
     "arcsin": OperatorSpec(
         function=safe_arcsin,

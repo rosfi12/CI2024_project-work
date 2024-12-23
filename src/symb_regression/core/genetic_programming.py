@@ -151,9 +151,21 @@ class GeneticProgram:
             op_complexity = sum(2 if node.op in BINARY_OPS else 1 for node in tree)
             op_penalty = self.params.parsimony_coefficient * (op_complexity / tree_size)
 
+            used_vars = set()
+            for node in tree:
+                if node.op and node.op.startswith("x"):
+                    used_vars.add(node.op)
+
+            # Calculate variable usage penalty
+            unused_vars = self.config.n_variables - len(used_vars)
+            var_penalty = self.params.unused_var_coefficient * unused_vars if unused_vars > 0 else 0
+
             # Combined penalties with configurable weights
             total_penalty = (
-                0.4 * size_penalty + 0.4 * depth_penalty + 0.2 * op_penalty
+                0.4 * size_penalty
+                + 0.4 * depth_penalty
+                + 0.2 * op_penalty
+                + 0.2 * var_penalty
             ) * self.params.parsimony_coefficient
 
             # Accuracy score with improved balance

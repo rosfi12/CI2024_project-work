@@ -26,6 +26,8 @@ class GeneticParams:
     depth_penalty_threshold: int = 5  # Depth at which penalties start
     size_penalty_threshold: int = 50  # Size at which penalties start
 
+    unused_var_coefficient: float = 0.1  # Coefficient for unused variable penalty
+
     def __post_init__(self) -> None:
         # Validate parameters
         if self.tournament_size > self.population_size:
@@ -44,6 +46,8 @@ class GeneticParams:
             raise ValueError("Depth penalty threshold cannot exceed maximum depth")
         if self.size_penalty_threshold > self.max_tree_size:
             raise ValueError("Size penalty threshold cannot exceed maximum tree size")
+        if not (0 <= self.unused_var_coefficient <= 1):
+            raise ValueError("Unused variable coefficient must be between 0 and 1")
 
 
 class MutationType(Enum):
