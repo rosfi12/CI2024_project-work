@@ -53,15 +53,6 @@ def run_symbolic_regression(
     if params is None:
         params = GeneticParams(
             tournament_size=7,
-<<<<<<< HEAD:src/test.py
-            mutation_prob=0.4,
-            crossover_prob=0.7,
-            elitism_count=10,
-            population_size=1000,
-            generations=300,
-            max_depth=5,
-            min_depth=2,
-=======
             mutation_prob=0.6,
             crossover_prob=0.9,
             elitism_count=7,
@@ -73,7 +64,6 @@ def run_symbolic_regression(
             max_tree_size=15,
             size_penalty_threshold=5,  # Size at which penalties start
             parsimony_coefficient=0.1,  # Controls size penalty weight
->>>>>>> origin/odd-problems:src/main.py
         )
 
     if debug:
@@ -132,17 +122,10 @@ def run_symbolic_regression(
 
 # Load and process data
 PROBLEM_DIR = os.getcwd()
-<<<<<<< HEAD:src/test.py
-DATA_DIR = os.path.join(PROBLEM_DIR, "src/data")
-
-x, y = load_data(DATA_DIR, "problem_2")
-
-=======
 DATA_DIR = os.path.join(PROBLEM_DIR, "data")
 PROBLEM = "problem_3"
 x, y = load_data(DATA_DIR, PROBLEM, show_stats=True)
 x_train, x_val, y_train, y_val = split_data(x, y, train_size=0.1)
 print("Done")
->>>>>>> origin/odd-problems:src/main.py
 # Run symbolic regression
 run_symbolic_regression(x, y, play_sound=True)
