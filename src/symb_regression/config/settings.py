@@ -27,6 +27,7 @@ class GeneticParams:
     size_penalty_threshold: int = 50  # Size at which penalties start
 
     unused_var_coefficient: float = 0.1  # Coefficient for unused variable penalty
+    injection_diversity: float = 0.1  # Coefficient for injection diversity
 
     def __post_init__(self) -> None:
         # Validate parameters
@@ -48,6 +49,8 @@ class GeneticParams:
             raise ValueError("Size penalty threshold cannot exceed maximum tree size")
         if not (0 <= self.unused_var_coefficient <= 1):
             raise ValueError("Unused variable coefficient must be between 0 and 1")
+        if not (0 <= self.injection_diversity <= 1):
+            raise ValueError("Injection diversity coefficient must be between 0 and 1")
 
 
 class MutationType(Enum):
@@ -64,15 +67,15 @@ class TreeConfig:
     """Configuration for tree creation"""
 
     # Node type probabilities
-    OPERATOR_PROBABILITY: float = 0.8
-    UNARY_OPERATOR_PROBABILITY: float = 0.3
+    OPERATOR_PROBABILITY: float = 0.7
+    UNARY_OPERATOR_PROBABILITY: float = 0.5
 
     # Variable placement
     ROOT_VARIABLE_SIDE_PROBABILITY: float = 0.5
-    VARIABLE_PROBABILITY: float = 0.7
+    VARIABLE_PROBABILITY: float = 0.8
 
     # Value ranges
-    CONSTANT_RANGE: Tuple[float, float] = (-5.0, 5.0)
+    CONSTANT_RANGE: Tuple[float, float] = (-10.0, 10.0)
 
     # Tree structure
     MIN_DEPTH: int = 1

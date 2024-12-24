@@ -5,6 +5,29 @@ import numpy as np
 import numpy.typing as npt
 
 
+def print_stats(x: npt.NDArray[np.float64], y: npt.NDArray[np.float64]) -> None:
+    print("=" * 50)
+    print("\nData Statistics:")
+    print(f"X shape: {x.shape}, Y shape: {y.shape}")
+    print(f"Number of variables: {x.shape[1] if x.ndim > 1 else 1}")
+
+    # Print statistics for each variable
+    if x.ndim > 1:
+        for i in range(x.shape[1]):
+            print(f"\nVariable x{i}:")
+            print(f"  Range: [{x[:,i].min():g}, {x[:,i].max():g}]")
+            print(f"  Mean: {x[:,i].mean():g}")
+            print(f"  Std: {x[:,i].std():g}")
+            corr = np.corrcoef(x[:, i], y)[0, 1]
+            print(f"  Correlation with y: {corr:g}")
+
+    print("\nTarget y:")
+    print(f"  Range: [{y.min():g}, {y.max():g}]")
+    print(f"  Mean: {y.mean():g}")
+    print(f"  Std: {y.std():g}")
+    print("=" * 50)
+
+
 def load_data(
     data_dir: str, problem_name: str, show_stats: bool = False
 ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
@@ -23,24 +46,7 @@ def load_data(
             x = x.T
 
         if show_stats:
-            print("\nData Statistics:")
-            print(f"X shape: {x.shape}, Y shape: {y.shape}")
-            print(f"Number of variables: {x.shape[1] if x.ndim > 1 else 1}")
-
-            # Print statistics for each variable
-            if x.ndim > 1:
-                for i in range(x.shape[1]):
-                    print(f"\nVariable x{i}:")
-                    print(f"  Range: [{x[:,i].min():.3f}, {x[:,i].max():.3f}]")
-                    print(f"  Mean: {x[:,i].mean():.3f}")
-                    print(f"  Std: {x[:,i].std():.3f}")
-                    corr = np.corrcoef(x[:, i], y)[0, 1]
-                    print(f"  Correlation with y: {corr:.3f}")
-
-            print("\nTarget y:")
-            print(f"  Range: [{y.min():.3f}, {y.max():.3f}]")
-            print(f"  Mean: {y.mean():.3f}")
-            print(f"  Std: {y.std():.3f}")
+            print_stats(x, y)
 
         return x, y
 
@@ -92,14 +98,71 @@ def split_data(
             f"x and y must have same number of samples. Got x: {x.shape[0]}, y: {y.shape[0]}"
         )
 
-    # Create random permutation
+    # Create random permutation using numpy
     idx = np.random.permutation(n_samples)
-    train_size = int(n_samples * train_size)
+    train_size_int = int(n_samples * train_size)
 
-    # Split the data
-    x_train = x[idx[:train_size]]
-    x_val = x[idx[train_size:]]
-    y_train = y[idx[:train_size]]
-    y_val = y[idx[train_size:]]
+    # Use advanced indexing instead of multiple array creations
+    mask = np.zeros(n_samples, dtype=bool)
+    mask[idx[:train_size_int]] = True
+
+    x_train = x[mask]
+    y_train = y[mask]
+    x_val = x[~mask]
+    y_val = y[~mask]
 
     return x_train, x_val, y_train, y_val
+
+
+def sort_and_filter_data(
+    x: npt.NDArray[np.float64],
+    y: npt.NDArray[np.float64],
+    sort_column: int = 1,
+    range_limit: float | None = None,
+    from_end: bool = False,
+    show_stats: bool = False,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """
+    Sort data by specified column and optionally filter by range.
+    """
+    # Ensure valid column index
+    if sort_column >= x.shape[1]:
+        raise ValueError(f"sort_column {sort_column} exceeds x dimensions {x.shape[1]}")
+
+    # Simple sort by specified column
+    sort_idx = np.argsort(x[:, sort_column])
+
+    # Apply sorting
+    x_sorted = x[sort_idx]
+    y_sorted = y[sort_idx]
+
+    if show_stats:
+        print("Before filtering:")
+        print_stats(x_sorted, y_sorted)
+
+    # Apply range filtering if specified
+    if range_limit is not None:
+        # Create mask for both columns within range
+        mask = np.ones(len(x_sorted), dtype=bool)
+        for col in range(x_sorted.shape[1]):
+            if from_end:
+                max_val = np.max(x_sorted[:, col])
+                min_val = max_val - range_limit
+                col_mask = (x_sorted[:, col] >= min_val) & (x_sorted[:, col] <= max_val)
+            else:
+                col_mask = (x_sorted[:, col] >= 0) & (x_sorted[:, col] <= range_limit)
+            mask = mask & col_mask
+
+        x_filtered = x_sorted[mask]
+        y_filtered = y_sorted[mask]
+
+        if show_stats:
+            print("\nAfter filtering:")
+            print_stats(x_filtered, y_filtered)
+
+        return x_filtered, y_filtered
+
+    if show_stats:
+        print(f"Final shape: {x_sorted.shape}")
+
+    return x_sorted, y_sorted

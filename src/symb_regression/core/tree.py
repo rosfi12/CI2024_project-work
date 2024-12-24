@@ -4,8 +4,6 @@ import numpy as np
 import numpy.typing as npt
 
 from symb_regression.operators.definitions import (
-    BINARY_OPS,
-    UNARY_OPS,
     OperatorSpec,
     RepresentationStyle,
     SymbolicConfig,
@@ -26,7 +24,9 @@ class Node:
         self.left: Node | None = None
         self.right: Node | None = None
 
-    def evaluate(self, x: np.ndarray, config: SymbolicConfig) -> np.ndarray:
+    def evaluate(
+        self, x: np.ndarray, config: SymbolicConfig
+    ) -> npt.NDArray[np.float64]:
         if self.value is not None:
             return np.full(x.shape[0], self.value)
         elif self.variable_idx is not None:
@@ -39,7 +39,7 @@ class Node:
         elif self.op is not None:
             assert self.left is not None, "Operator node missing left child"
             op_spec: OperatorSpec = config.operators[self.op]
-            # TODO: Need to add a safeguard for the function signature based on the operator is_unary property
+            # TODO: type safeguard for the function signature based on the operator is_unary property
             if op_spec.is_unary:
                 return op_spec.function(self.left.evaluate(x, config))  # type: ignore
 

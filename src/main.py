@@ -1,26 +1,35 @@
+import json
 import logging
 import os
 import time
 import winsound
+from datetime import datetime
 from logging import Logger
 from typing import List
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 from symb_regression.config import GeneticParams
 from symb_regression.core import GeneticProgram
 from symb_regression.core.tree import Node
-from symb_regression.operators.definitions import SymbolicConfig
-from symb_regression.utils.data_handler import load_data, split_data
-from symb_regression.utils.metrics import Metrics, calculate_score
+from symb_regression.utils.data_handler import load_data, sort_and_filter_data
+from symb_regression.utils.metrics import Metrics
 from symb_regression.utils.plotting import (
+    plot,
+    plot_3d,
     plot_evolution_metrics,
     plot_expression_tree,
     plot_prediction_analysis,
+    plot_regression_data,
     plot_3d_data
 )
 from symb_regression.utils.random import set_global_seed
+
+
+def save_and_print(message: str, file_handle) -> None:
+    """Print message to both console and file"""
+    print(message)
+    file_handle.write(message + "\n")
 
 
 def print_section_header(title: str, logger: Logger | None = None):
@@ -50,6 +59,15 @@ def run_symbolic_regression(
     play_sound: bool = False,
 ) -> tuple[Node, List[Metrics]]:
     logger: Logger = logging.getLogger("symb_regression")
+
+    # Create results directory if it doesn't exist
+    base_results_dir = os.path.join(os.getcwd(), "results")
+    problem_dir = os.path.join(base_results_dir, PROBLEM)
+    os.makedirs(problem_dir, exist_ok=True)
+
+    # Generate timestamp-based filename
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    results_file = os.path.join(problem_dir, f"results_{timestamp}.txt")
 
     if params is None:
         params = GeneticParams(
@@ -83,9 +101,7 @@ def run_symbolic_regression(
 
         end_time = time.perf_counter()
         execution_time = end_time - start_time
-
         if play_sound:
-            # Play Windows default "SystemExclamation" sound
             winsound.PlaySound("SystemExclamation", winsound.SND_ALIAS)
 
         # Use print for better visibility of results
@@ -126,10 +142,13 @@ def run_symbolic_regression(
 # Load and process data
 PROBLEM_DIR = os.getcwd()
 DATA_DIR = os.path.join(PROBLEM_DIR, "data")
-PROBLEM = "problem_4"
+PROBLEM = "problem_5"
 x, y = load_data(DATA_DIR, PROBLEM, show_stats=True)
-x_train, x_val, y_train, y_val = split_data(x, y, train_size=0.1)
-print("Done")
+x, y = sort_and_filter_data(x, y, range_limit=4, from_end=True, show_stats=True)
+
+plot_3d(x, y)
+
+# raise
 # Run symbolic regression
 run_symbolic_regression(x[:, 1].reshape(-1, 1), y, play_sound=True)
 plot_3d_data(x,y)

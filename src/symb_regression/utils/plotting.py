@@ -6,6 +6,16 @@ import numpy as np
 
 from symb_regression.core.tree import Node
 from symb_regression.operators.definitions import SymbolicConfig
+from symb_regression.utils.metrics import Metrics
+
+
+def plot(x: np.ndarray, y: np.ndarray, best_solution: Node, history: List[Metrics]):
+    _, axs = plt.subplots(1, 2, figsize=(12, 6))
+    plot_evolution_metrics(history, ax=axs[0])
+    plot_prediction_analysis(best_solution, x, y, ax=axs[1])
+    plt.tight_layout()
+    plt.show()
+    plot_expression_tree(best_solution)
 
 
 def plot_evolution_metrics(metrics_history: List[Any], ax=None) -> None:
@@ -189,62 +199,134 @@ def plot_expression_tree(root_node):
     plt.show()
 
 
-def plot_3d_data(
+def plot_3d(
+    x: np.ndarray,
+    y: np.ndarray,
+    show_stats: bool = False,
+) -> None:
+    """Plot regression data with debug information."""
+
+    if show_stats:
+        print("Raw data inspection:")
+        print(f"Y array shape: {y.shape}")
+        print(f"Y actual min: {np.min(y)}")
+        print(f"Y actual max: {np.max(y)}")
+        print(f"Y sample values: {y[:5]}")  # Show first 5 values
+
+    fig = plt.figure(figsize=(10, 8))
+
+    if x.shape[1] == 2:
+        ax = fig.add_subplot(111, projection="3d")
+
+        # Plot raw data first without any transformations
+        ax.scatter(x[:, 0], x[:, 1], y, c="blue", alpha=0.6, label="Data Points")
+
+        # Print coordinates of points with y < -2 for verification
+        extreme_points = y < -2
+        if np.any(extreme_points):
+            print("\nPoints with y < -2:")
+            print("X1\tX2\tY")
+            for x1, x2, y_val in zip(
+                x[extreme_points, 0], x[extreme_points, 1], y[extreme_points]
+            ):
+                print(f"{x1:.3f}\t{x2:.3f}\t{y_val:.3f}")
+
+        # Set axis labels
+        ax.set_xlabel("X₁")
+        ax.set_ylabel("X₂")
+        ax.set_zlabel("Y")  # type: ignore
+
+        # Explicitly set zlim based on actual data
+        margin = (np.max(y) - np.min(y)) * 0.1
+        ax.set_zlim(np.min(y) - margin, np.max(y) + margin)  # type: ignore
+
+        plt.tight_layout()
+        plt.show()
+
+
+def plot_regression_data(
     x: np.ndarray,
     y: np.ndarray,
     best_solution: Optional[Node] = None,
-    config: SymbolicConfig = SymbolicConfig.create(),
+    symb_config: SymbolicConfig = SymbolicConfig.create(),
 ) -> None:
-    """
-    Create a 3D visualization of the regression problem.
+    """Plot regression data with improved 3D visualization."""
+    fig = plt.figure(figsize=(10, 8))
 
-    Args:
-        x: Input data (n_samples, 2)
-        y: Target values (n_samples,)
-        best_solution: Optional best solution found
-        ax: Optional axes to plot on
-        config: Symbolic configuration used
-    """
+    match x.shape[1]:
+        case 1:
+            ax = fig.add_subplot(111)
 
-    fig = plt.figure(figsize=(12, 8))
-    ax = fig.add_subplot(111, projection="3d")
+            if best_solution is not None:
+                # Plot actual data points
+                scatter = ax.scatter(x, y, c="blue", alpha=0.6, label="Actual Data")
 
-    # Scatter plot of actual data points
-    scatter = ax.scatter(
-        x[:, 0], x[:, 1], y, c=y, cmap="viridis", alpha=0.6, label="Actual Data"
-    )
+                # Plot prediction line
+                x_range = np.linspace(min(x), max(x), 100)
+                x_pred = x_range.reshape(-1, 1)
+                y_pred = best_solution.evaluate(x_pred, symb_config)
+                ax.plot(x_pred, y_pred, "r-", alpha=0.8, label="Prediction")
 
-    # If we have a solution, plot the predicted surface
-    if best_solution is not None:
-        # Create a meshgrid for surface plotting
-        x0_range = np.linspace(min(x[:, 0]), max(x[:, 0]), 50)
-        x1_range = np.linspace(min(x[:, 1]), max(x[:, 1]), 50)
-        X0, X1 = np.meshgrid(x0_range, x1_range)
+                ax.set_title("Regression Results with Predictions")
+            else:
+                scatter = ax.scatter(x, y, c="blue", alpha=0.6)
+                ax.set_title("Data Distribution")
 
-        # Prepare input for prediction
-        X_pred = np.column_stack((X0.ravel(), X1.ravel()))
+            ax.set_xlabel("X")
+            ax.set_ylabel("Y")
+            ax.grid(True)
+            ax.legend()
+        case 2:
+            ax = fig.add_subplot(111, projection="3d")
 
-        # Get predictions
-        Y_pred = best_solution.evaluate(X_pred, config)
-        Z = Y_pred.reshape(X0.shape)
+            if best_solution is not None:
+                # Plot actual data points first
+                scatter = ax.scatter(
+                    x[:, 0],
+                    x[:, 1],
+                    y,
+                    c=np.abs(best_solution.evaluate(x, symb_config) - y)
+                    / (np.abs(y) + 1e-10),
+                    cmap="RdYlBu_r",
+                    alpha=0.6,
+                    label="Actual Data",
+                )
 
-        # Plot prediction surface
-        _ = ax.plot_surface(
-            X0, X1, Z, cmap="viridis", alpha=0.3, label="Predicted Surface"
-        )
+                # Prediction surface
+                x0_range = np.linspace(min(x[:, 0]), max(x[:, 0]), 50)
+                x1_range = np.linspace(min(x[:, 1]), max(x[:, 1]), 50)
+                X0, X1 = np.meshgrid(x0_range, x1_range)
+                X_pred = np.column_stack((X0.ravel(), X1.ravel()))
+                Z = best_solution.evaluate(X_pred, symb_config).reshape(X0.shape)
 
-    # Customize the plot
-    ax.set_xlabel("X₁")
-    ax.set_ylabel("X₂")
-    ax.set_zlabel("Y")
-    ax.set_title("3D Visualization of Regression Problem")
+                _ = ax.plot_surface(X0, X1, Z, alpha=0.3, cmap="viridis")  # type: ignore
 
-    # Add colorbar
-    fig.colorbar(scatter, label="Target Values")
+                fig.colorbar(scatter, label="Relative Error")
+                ax.set_title("Regression Results with Predictions")
+            else:
+                scatter = ax.scatter(
+                    x[:, 0], x[:, 1], y, c=y, cmap="viridis", alpha=0.6
+                )
+                fig.colorbar(scatter, label="Target Values")
+                ax.set_title("Data Distribution")
 
-    # Adjust the view
-    ax.view_init(elev=20, azim=45)
+            # Set explicit z-axis limits based on actual data range
+            z_min = min(y.min(), Z.min() if best_solution is not None else y.min())  # type: ignore
+            z_max = max(y.max(), Z.max() if best_solution is not None else y.max())  # type: ignore
+            z_padding = (z_max - z_min) * 0.1  # 10% padding
+            ax.set_zlim(z_min - z_padding, z_max + z_padding)  # type: ignore
+
+            ax.set_xlabel("X₁")
+            ax.set_ylabel("X₂")
+            ax.set_zlabel("Y")  # type: ignore
+            ax.view_init(elev=20, azim=45)  # type: ignore
+
+            # Add legend
+            if best_solution is not None:
+                ax.legend()
+
+        case _:
+            raise ValueError(f"Unexpected input shape: {x.shape}")
+
     plt.tight_layout()
-
     plt.show()
-    return None

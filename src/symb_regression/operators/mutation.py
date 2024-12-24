@@ -1,10 +1,13 @@
 import random
 from typing import Dict, Optional
 
+import numpy as np
+
 from symb_regression.config.settings import MutationConfig, MutationType, TreeConfig
 from symb_regression.core.tree import Node
 from symb_regression.operators.definitions import (
     BINARY_OPS,
+    MIN_FLOAT,
     UNARY_OPS,
 )
 
