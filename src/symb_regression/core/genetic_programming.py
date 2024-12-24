@@ -35,9 +35,6 @@ class GeneticProgram:
         self.best_solution: Optional[Node] = None
         self.metrics_history: List[Metrics] = []
         self.config: SymbolicConfig = config
-        self.operator_success: defaultdict = defaultdict(
-            lambda: {"uses": 0, "improvements": 0}
-        )
 
     def calculate_population_diversity(self) -> float:
         """Calculate population diversity using expression structure."""

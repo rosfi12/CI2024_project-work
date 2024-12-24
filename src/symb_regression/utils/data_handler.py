@@ -92,14 +92,17 @@ def split_data(
             f"x and y must have same number of samples. Got x: {x.shape[0]}, y: {y.shape[0]}"
         )
 
-    # Create random permutation
+    # Create random permutation using numpy
     idx = np.random.permutation(n_samples)
-    train_size = int(n_samples * train_size)
+    train_size_int = int(n_samples * train_size)
 
-    # Split the data
-    x_train = x[idx[:train_size]]
-    x_val = x[idx[train_size:]]
-    y_train = y[idx[:train_size]]
-    y_val = y[idx[train_size:]]
+    # Use advanced indexing instead of multiple array creations
+    mask = np.zeros(n_samples, dtype=bool)
+    mask[idx[:train_size_int]] = True
+
+    x_train = x[mask]
+    y_train = y[mask]
+    x_val = x[~mask]
+    y_val = y[~mask]
 
     return x_train, x_val, y_train, y_val
