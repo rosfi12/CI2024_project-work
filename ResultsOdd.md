@@ -1,13 +1,3 @@
-# Problem_0
-Best Expression Found: 
-sqrt((x1 + arcsin(x1)) * exp(sin(cos(x0))))
-Final Fitness: 0.927131
-Execution Time: 68.08 seconds
-Generations: 300
-Performance Metrics:
-Mean Squared Error: 0.068596
-R² Score: 0.921524 (92.2% of variance explained)
-
 # Problem_1
 Best Expression Found: 
 sin(x0 min x0)
@@ -18,15 +8,6 @@ Performance Metrics:
 Mean Squared Error: 0.000000
 R² Score: 1.000000 (100.0% of variance explained)
 
-# Problem_2
-Best Expression Found: 
-sinh(exp(exp(sign(sinh(x1 + x0 + x2) + x0))))
-Final Fitness: 4.35929e-14
-Execution Time: 133.86 seconds
-Generations: 300
-Performance Metrics:
-Mean Squared Error: 22939506324798.718750
-R² Score: 0.225378 (22.5% of variance explained)
 
 # Problem_3
 Best Expression Found: 
@@ -64,15 +45,48 @@ Mean Squared Error: 0.648618
 R² Score: 900.078441 (90007.8% of variance explained)
 ==================================================
 
-# Problem_4
-Best Expression Found: 
-sinh(exp(cos(sin(sin(x1)) - x0 min x1 max x1)))
-Final Fitness: 0.146251
-Execution Time: 116.79 seconds
-Generations: 300
+==================================================
+==== SYMBOLIC REGRESSION RESULTS - problem_3 =====
+==================================================
+Best Expression Found: (-1.981 * sinh(x1))
+Final Fitness: 0.489532
+Execution Time: 29.31 seconds
+Generations: 200
+==================================================
 Performance Metrics:
-Mean Squared Error: 5.825544
-R² Score: 0.730573 (73.1% of variance explained)
+Mean Squared Error: 777.100764
+R² Score: 0.696627 (69.66% of variance explained)
+==================================================
+
+SYMBOLIC REGRESSION RESULTS - problem_3
+==================================================
+Best Expression Found: ((sigmoid(x2) + x1) * log(min(x1, arccos((log(x1) / (log2(tan(sqrt(arcsinh(x1)))) atan2 sign(cos(arccosh(cot(arccosh(8.704)))))))))))
+
+Performance Metrics:
+Final Fitness: 0.0014319
+Mean Squared Error: 562.994191
+R² Score: 0.780212 (78.02% of variance explained)
+Execution Time: 19912.72 seconds
+Generations: 1000
+
+Genetic Algorithm Parameters:
+{
+    "tournament_size": 100,
+    "elitism_count": 10,
+    "mutation_prob": 0.4,
+    "crossover_prob": 0.9,
+    "population_size": 10000,
+    "generations": 1000,
+    "maximum_tree_depth": 10,
+    "minimum_tree_depth": 2,
+    "max_tree_size": 10,
+    "parsimony_coefficient": 0.1,
+    "depth_penalty_threshold": 5,
+    "size_penalty_threshold": 7,
+    "unused_var_coefficient": 0.4,
+    "injection_diversity": 0.6
+}
+==================================================
 
 # Problem_5
 Best Expression Found: 
@@ -110,59 +124,72 @@ Mean Squared Error: -0.064122
 R² Score: 0.000000 (0.0% of variance explained)
 ==================================================
 
-# Problem_6
-Best Expression Found: 
-x1 - sin(sin(arcsin(x1))) + x1 - x0 * x0 max arcsin(x0) / (x0 + abs(sqrt(x0)))
-Final Fitness: 0.863622
-Execution Time: 138.21 seconds
-Generations: 300
-Performance Metrics:
-Mean Squared Error: 0.136914
-R² Score: 0.989969 (99.0% of variance explained)
 
 ==================================================
 ==== SYMBOLIC REGRESSION RESULTS - problem_7 =====
 ==================================================
-Best Expression Found: (4.531 * exp((x0 * x1)))
-Final Fitness: 0.388126
-Execution Time: 24.78 seconds
+Best Expression Found: ((x0 * x1) ** 4.232)
+Performance Metrics:
+Final Fitness: 0.00259503
+Mean Squared Error: 378.732501
+R² Score: 0.467441 (46.74% of variance explained)
+Execution Time: 209.80 seconds
 Generations: 300
-==================================================
-Performance Metrics:
-Mean Squared Error: 0.535917
-R² Score: 330.034956 (33003.5% of variance explained)
-==================================================
-==================================================
-==== SYMBOLIC REGRESSION RESULTS - problem_7 =====
-==================================================
-Best Expression Found: cosh(|x1 - (sqrt(arcsin(((|(3.986 ** x1) - (x0 - x0)| - cos((x0 * x0))) // (((x0 // -4.586) / (0.925 // -3.983)) * x1)))) * 2.612)|)
-Final Fitness: 0.0939783
-Execution Time: 346.80 seconds
-Generations: 200
-==================================================
-Performance Metrics:
-Mean Squared Error: 0.133674
-R² Score: 616.092331 (61609.2% of variance explained)
-==================================================
-==================================================
-==== SYMBOLIC REGRESSION RESULTS - problem_7 =====
-==================================================
-Best Expression Found: exp((abs(2.316) ** log2((x0 + x1))))
-Final Fitness: 0.336232
-Execution Time: 169.34 seconds
-Generations: 350
-==================================================
-Performance Metrics:
-Mean Squared Error: 0.488340
-R² Score: 363.870192 (36387.0% of variance explained)
 ==================================================
 
-# Problem_8
-Best Expression Found: 
-abs(x5) ** tan(arcsin(cosh(x1 / x3 abs_diff x4 % x2 abs_diff cos(cos(x3) // x0)))) * x5
-Final Fitness: 9.72929e-07
-Execution Time: 1080.91 seconds
-Generations: 300
+==================================================
+==== SYMBOLIC REGRESSION RESULTS - problem_7 =====
+==================================================
+Best Expression Found: (exp(min(x0, 2.053)) ** (tanh(x1) + x1))
 Performance Metrics:
-Mean Squared Error: 1027822.889642
-R² Score: 0.954733 (95.5% of variance explained)
+Final Fitness: 0.00272747
+Mean Squared Error: 357.213680
+R² Score: 0.497700 (49.77% of variance explained)
+Execution Time: 325.05 seconds
+Generations: 300
+==================================================
+{
+    "tournament_size": 7,
+    "elitism_count": 7,
+    "mutation_prob": 0.8,
+    "crossover_prob": 0.8,
+    "population_size": 1000,
+    "generations": 300,
+    "maximum_tree_depth": 10,
+    "minimum_tree_depth": 2,
+    "max_tree_size": 20,
+    "parsimony_coefficient": 0.1,
+    "depth_penalty_threshold": 5,
+    "size_penalty_threshold": 5,
+    "unused_var_coefficient": 0.3,
+    "injection_diversity": 0.4
+}
+==================================================
+
+==================================================
+==== SYMBOLIC REGRESSION RESULTS - problem_7 =====
+==================================================
+Best Expression Found: (x1 * (x1 * |-2.659 - log2(sin(sqrt(exp((cosh(x0) // |x1 - x0|)))))|))
+Performance Metrics:
+Final Fitness: 0.00267744
+Mean Squared Error: 350.148737
+R² Score: 0.507634 (50.76% of variance explained)
+Execution Time: 335.04 seconds
+Generations: 300
+==================================================
+{
+    "tournament_size": 7,
+    "elitism_count": 7,
+    "mutation_prob": 0.8,
+    "crossover_prob": 0.8,
+    "population_size": 1000,
+    "generations": 300,
+    "maximum_tree_depth": 10,
+    "minimum_tree_depth": 2,
+    "max_tree_size": 20,
+    "parsimony_coefficient": 0.1,
+    "depth_penalty_threshold": 5,
+    "size_penalty_threshold": 5,
+    "unused_var_coefficient": 0.3,
+    "injection_diversity": 0.4
+}

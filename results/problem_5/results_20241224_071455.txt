@@ -1,0 +1,29 @@
+SYMBOLIC REGRESSION RESULTS - problem_5
+==================================================
+Best Expression Found: log2(sqrt(sign(cot(-8.569))))
+
+Performance Metrics:
+Final Fitness: 0.826446
+Mean Squared Error: 0.000000
+R² Score: 0.000000 (0.00% of variance explained)
+Execution Time: 3660.46 seconds
+Generations: 1000
+
+Genetic Algorithm Parameters:
+{
+    "tournament_size": 500,
+    "elitism_count": 70,
+    "mutation_prob": 0.9,
+    "crossover_prob": 0.9,
+    "population_size": 10000,
+    "generations": 1000,
+    "maximum_tree_depth": 10,
+    "minimum_tree_depth": 2,
+    "max_tree_size": 10,
+    "parsimony_coefficient": 0.7,
+    "depth_penalty_threshold": 5,
+    "size_penalty_threshold": 7,
+    "unused_var_coefficient": 0.4,
+    "injection_diversity": 0.9
+}
+==================================================

@@ -216,9 +216,21 @@ def safe_power(
     return np.clip(result, -MAX_FLOAT, MAX_FLOAT)
 
 
+def safe_arcsin(x: npt.NDArray[FLOAT_PRECISION]) -> npt.NDArray[FLOAT_PRECISION]:
+    """Safe tangent function with clipping"""
+    clipped = np.clip(x, -1 + MIN_FLOAT, 1 - MIN_FLOAT)
+    return np.asin(clipped)
+
+
+def safe_arccos(x: npt.NDArray[FLOAT_PRECISION]) -> npt.NDArray[FLOAT_PRECISION]:
+    """Safe tangent function with clipping"""
+    clipped = np.clip(x, -1+ MIN_FLOAT, 1- MIN_FLOAT)
+    return np.arccos(clipped)
+
+
 def safe_tan(x: npt.NDArray[FLOAT_PRECISION]) -> npt.NDArray[FLOAT_PRECISION]:
     """Safe tangent function with clipping"""
-    clipped = np.clip(x, -np.pi / 2 + 1e-10, np.pi / 2 - 1e-10)
+    clipped = np.clip(x, -np.pi / 2 + MIN_FLOAT, np.pi / 2 - MIN_FLOAT)
     return np.tan(clipped)
 
 
@@ -226,15 +238,9 @@ def safe_atan2(
     x1_clipped: npt.NDArray[FLOAT_PRECISION], x2: npt.NDArray[FLOAT_PRECISION]
 ) -> npt.NDArray[FLOAT_PRECISION]:
     """Safe tangent function with clipping"""
-    x1_clipped = np.clip(x1_clipped, -np.pi + 1e-10, np.pi - 1e-10)
-    x2_clipped = np.clip(x2, -np.pi + 1e-10, np.pi - 1e-10)
+    x1_clipped = np.clip(x1_clipped, -np.pi + MIN_FLOAT, np.pi - MIN_FLOAT)
+    x2_clipped = np.clip(x2, -np.pi + MIN_FLOAT, np.pi - MIN_FLOAT)
     return np.atan2(x1_clipped, x2_clipped)
-
-
-def safe_arcsin(x: npt.NDArray[FLOAT_PRECISION]) -> npt.NDArray[FLOAT_PRECISION]:
-    """Safe arcsine function with clipping"""
-    clipped = np.clip(x, -1, 1)
-    return np.arcsin(clipped)
 
 
 def safe_sinh(x: npt.NDArray[FLOAT_PRECISION]) -> npt.NDArray[FLOAT_PRECISION]:
@@ -249,10 +255,35 @@ def safe_cosh(x: npt.NDArray[FLOAT_PRECISION]) -> npt.NDArray[FLOAT_PRECISION]:
     return np.cosh(clipped)
 
 
+def safe_arcsinh(x: npt.NDArray[FLOAT_PRECISION]) -> npt.NDArray[FLOAT_PRECISION]:
+    """Safe hyperbolic cosine function with clipping"""
+    clipped = np.clip(x, -1 + MIN_FLOAT, 1 - MIN_FLOAT)
+    return np.arcsinh(clipped)
+
+
+def safe_arccosh(x: npt.NDArray[FLOAT_PRECISION]) -> npt.NDArray[FLOAT_PRECISION]:
+    """Safe hyperbolic cosine function with clipping"""
+    clipped = np.maximum(x, 1 + MIN_FLOAT)
+    return np.arccosh(clipped)
+
+
+def safe_arctanh(
+    x1_clipped: npt.NDArray[FLOAT_PRECISION],
+) -> npt.NDArray[FLOAT_PRECISION]:
+    """Safe tangent function with clipping"""
+    x_clipped = np.clip(x1_clipped, -1 + MIN_FLOAT, 1 - MIN_FLOAT)
+    return np.arctanh(x_clipped)
+
+
 BASE_OPERATORS: Dict[str, OperatorSpec] = {
     # Unary operators - highest precedence (4)
     "sin": OperatorSpec(
         function=np.sin,
+        precedence=4,
+        is_unary=True,
+    ),
+    "arcsin": OperatorSpec(
+        function=safe_arcsin,
         precedence=4,
         is_unary=True,
     ),
@@ -261,15 +292,20 @@ BASE_OPERATORS: Dict[str, OperatorSpec] = {
         precedence=4,
         is_unary=True,
     ),
+    "arccos": OperatorSpec(
+        function=safe_arccos,
+        precedence=4,
+        is_unary=True,
+    ),
+    "hypot": OperatorSpec(
+        function=np.hypot,
+        precedence=4,
+        is_unary=False,
+    ),
     "tan": OperatorSpec(
         function=safe_tan,
         precedence=4,
         is_unary=True,
-    ),
-    "atan2": OperatorSpec(
-        function=safe_atan2,
-        precedence=4,
-        is_unary=False,
     ),
     "cot": OperatorSpec(
         function=lambda x: np.clip(
@@ -279,20 +315,44 @@ BASE_OPERATORS: Dict[str, OperatorSpec] = {
         ),
         precedence=4,
         is_unary=True,
-        
     ),
-    "arcsin": OperatorSpec(
-        function=safe_arcsin,
+    "atan2": OperatorSpec(
+        function=safe_atan2,
         precedence=4,
-        is_unary=True,
+        is_unary=False,
+    ),
+    "arctan2": OperatorSpec(
+        function=np.arctan2,
+        precedence=4,
+        is_unary=False,
     ),
     "sinh": OperatorSpec(
-        function=safe_sinh,
+        function=lambda x: np.sinh(np.clip(x, -MAX_EXP, MAX_EXP)),
         precedence=4,
         is_unary=True,
     ),
     "cosh": OperatorSpec(
         function=safe_cosh,
+        precedence=4,
+        is_unary=True,
+    ),
+    "tanh": OperatorSpec(
+        function=np.tanh,
+        precedence=4,
+        is_unary=True,
+    ),
+    "arcsinh": OperatorSpec(
+        function=np.arcsinh,
+        precedence=4,
+        is_unary=True,
+    ),
+    "arccosh": OperatorSpec(
+        function=safe_arccosh,
+        precedence=4,
+        is_unary=True,
+    ),
+    "arctanh": OperatorSpec(
+        function=safe_arctanh,
         precedence=4,
         is_unary=True,
     ),
@@ -302,17 +362,22 @@ BASE_OPERATORS: Dict[str, OperatorSpec] = {
         is_unary=True,
     ),
     "log": OperatorSpec(
-        function=lambda x: np.log(np.abs(x) + MIN_FLOAT),
+        function=lambda x: np.log(np.maximum(MIN_FLOAT, x)),
         precedence=4,
         is_unary=True,
     ),
     "log2": OperatorSpec(
-        function=lambda x: np.log2(np.abs(x) + MIN_FLOAT),
+        function=lambda x: np.log2(np.maximum(MIN_FLOAT, x)),
+        precedence=4,
+        is_unary=True,
+    ),
+    "log10": OperatorSpec(
+        function=lambda x: np.log10(np.maximum(MIN_FLOAT, x)),
         precedence=4,
         is_unary=True,
     ),
     "sqrt": OperatorSpec(
-        function=lambda x: np.sqrt(np.maximum(0, x)),
+        function=lambda x: np.sqrt(np.maximum(MIN_FLOAT, x)),
         precedence=4,
         is_unary=True,
     ),
@@ -332,7 +397,7 @@ BASE_OPERATORS: Dict[str, OperatorSpec] = {
         is_unary=True,
     ),
     "reciprocal": OperatorSpec(
-        function=lambda x: np.divide(1, np.where(np.abs(x) < MIN_FLOAT, MIN_FLOAT, x)),
+        function=lambda x: np.reciprocal(np.maximum(MIN_FLOAT, np.abs(x))),
         precedence=4,
         is_unary=True,
     ),

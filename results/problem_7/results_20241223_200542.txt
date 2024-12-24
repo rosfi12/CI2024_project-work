@@ -1,0 +1,29 @@
+SYMBOLIC REGRESSION RESULTS - problem_7
+==================================================
+Best Expression Found: cosh((sinh(arcsin((-5.958 - x0))) hypot (max((x0 * x1), sigmoid(x1)) + x1)))
+
+Performance Metrics:
+Final Fitness: 0.00181118
+Mean Squared Error: 534.723532
+R² Score: 0.248092 (24.81% of variance explained)
+Execution Time: 87.25 seconds
+Generations: 300
+
+Genetic Algorithm Parameters:
+{
+    "tournament_size": 7,
+    "elitism_count": 7,
+    "mutation_prob": 0.2,
+    "crossover_prob": 0.9,
+    "population_size": 1000,
+    "generations": 300,
+    "maximum_tree_depth": 10,
+    "minimum_tree_depth": 2,
+    "max_tree_size": 20,
+    "parsimony_coefficient": 0.1,
+    "depth_penalty_threshold": 5,
+    "size_penalty_threshold": 5,
+    "unused_var_coefficient": 0.05,
+    "injection_diversity": 0.4
+}
+==================================================
