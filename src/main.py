@@ -12,7 +12,7 @@ import numpy as np
 from symb_regression.config import GeneticParams
 from symb_regression.core import GeneticProgram
 from symb_regression.core.tree import Node
-from symb_regression.utils.data_handler import load_data
+from symb_regression.utils.data_handler import load_data, sort_and_filter_data
 from symb_regression.utils.metrics import Metrics
 from symb_regression.utils.plotting import (
     plot,
@@ -70,18 +70,18 @@ def run_symbolic_regression(
 
     if params is None:
         params = GeneticParams(
-            tournament_size=700,
-            mutation_prob=0.5,
+            tournament_size=7,
+            mutation_prob=0.9,
             crossover_prob=0.9,
-            elitism_count=70,
-            population_size=10500,
-            generations=1000,
-            minimum_tree_depth=2,
-            depth_penalty_threshold=5,  # Depth at which penalties start
+            elitism_count=5,
+            population_size=1000,
+            generations=300,
+            minimum_tree_depth=3,
+            depth_penalty_threshold=7,  # Depth at which penalties start
             maximum_tree_depth=10,
             size_penalty_threshold=10,  # Size at which penalties start
-            max_tree_size=50,
-            parsimony_coefficient=0.7,
+            max_tree_size=20,
+            parsimony_coefficient=0.9,
             unused_var_coefficient=0.4,  # Coefficient for unused variable penalty
             injection_diversity=0.9,  # Coefficient for injection diversity
         )
@@ -127,10 +127,12 @@ def run_symbolic_regression(
         logger.info(f"Results saved to: {results_file}")
 
         # # Plot the evolution progress
-        plot(x, y, best_solution, history)
+        # plot(x, y, best_solution, history)
         # To be safe get the first two features to visualize the data
+        if x.ndim > 1:
+            x = x[:, :2]
 
-        plot_regression_data(x[:, :2], y, best_solution)
+        plot_regression_data(x, y, best_solution)
         return best_solution, history
 
     except Exception as e:
@@ -144,11 +146,12 @@ def run_symbolic_regression(
 # Load and process data
 PROBLEM_DIR = os.getcwd()
 DATA_DIR = os.path.join(PROBLEM_DIR, "data")
-PROBLEM = "problem_7"
+PROBLEM = "problem_5"
 x, y = load_data(DATA_DIR, PROBLEM, show_stats=True)
+x, y = sort_and_filter_data(x, y, range_limit=4, from_end=True, show_stats=True)
 
-# plot_3d(x, y)
+plot_3d(x, y)
 
-
+# raise
 # Run symbolic regression
 run_symbolic_regression(x, y, play_sound=True)
