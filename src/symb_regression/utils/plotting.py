@@ -202,15 +202,16 @@ def plot_expression_tree(root_node):
 def plot_3d(
     x: np.ndarray,
     y: np.ndarray,
+    show_stats: bool = False,
 ) -> None:
     """Plot regression data with debug information."""
 
-    # Debug raw data first
-    print("Raw data inspection:")
-    print(f"Y array shape: {y.shape}")
-    print(f"Y actual min: {np.min(y)}")
-    print(f"Y actual max: {np.max(y)}")
-    print(f"Y sample values: {y[:5]}")  # Show first 5 values
+    if show_stats:
+        print("Raw data inspection:")
+        print(f"Y array shape: {y.shape}")
+        print(f"Y actual min: {np.min(y)}")
+        print(f"Y actual max: {np.max(y)}")
+        print(f"Y sample values: {y[:5]}")  # Show first 5 values
 
     fig = plt.figure(figsize=(10, 8))
 
