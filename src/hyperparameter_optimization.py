@@ -100,18 +100,20 @@ def optimize_parameters(
 ):
     # Parameter grid setup
     param_grid: Dict[str, list[int | float]] = {
-        "tournament_size": [5, 7, 8],
-        "mutation_prob": [0.4, 0.6, 0.8],
-        "crossover_prob": [0.8, 0.9],
-        "elitism_count": [2, 4],
-        "population_size": [2000],
-        "generations": [400],
-        "max_depth": [
-            5,
-            6,
-        ],
-        "min_depth": [1],
-    }
+    "tournament_size": [5, 7, 8],
+    "mutation_prob": [0.4, 0.6, 0.8],
+    "crossover_prob": [0.8, 0.9],
+    "elitism_count": [2, 4, 8, 10],
+    "population_size": [1000, 1500, 2000],
+    "generations": [300, 400, 500],
+    "maximum_tree_depth": [5, 6],
+    "minimum_tree_depth": [1],
+    "max_tree_size": [15],
+    "parsimony_coefficient": [0.1],
+    "depth_penalty_threshold": [5],
+    "size_penalty_threshold": [50],
+    "unused_var_coefficient": [0.1]
+}
 
     # Generate combinations
     param_combinations = [
@@ -170,7 +172,7 @@ if __name__ == "__main__":
     set_global_seed(42)
 
     # Problems to optimize
-    problem_ids: List[str] = ["3"]
+    problem_ids: List[str] = ["6"]
 
     print("Starting parameter optimization...")
     print(f"Optimizing for problems: {problem_ids}")

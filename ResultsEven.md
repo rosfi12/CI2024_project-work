@@ -10,25 +10,33 @@ R² Score: 1.000000 (100.0% of variance explained)
 
 # Problem_2
 params = GeneticParams(
-            tournament_size=7,
-            mutation_prob=0.4,
+            tournament_size=8,
+            mutation_prob=0.8,
             crossover_prob=0.7,
             elitism_count=10,
             population_size=1000,
-            generations=300,
-            max_depth=5,
-            min_depth=2,
+            generations=500,
+            maximum_tree_depth=7,
+            minimum_tree_depth=2,
+            depth_penalty_threshold=5,  # Depth at which penalties start
+            max_tree_size=15,
+            size_penalty_threshold=5,  # Size at which penalties start
+            parsimony_coefficient=0.1,  # Controls size penalty weight
+            unused_var_coefficient=0.1,  # Coefficient for unused variable penalty
         )
 
-Best Expression Found: sqrt((((x0 * (|(cos(min(x0, x1)) - (x1 / x1)) - abs(|x1 - x0|)| - (x2 * x1))) * exp(abs(max(x1, max(max(x2, x0), x2))))) // (x2 // sinh(x2))))
-Final Fitness: 4.33772e-14
-Execution Time: 461.81 seconds
-Generations: 300
 ==================================================
-
+==== SYMBOLIC REGRESSION RESULTS - problem_2 =====
+==================================================
+Best Expression Found: sqrt(((4.691 // (3.457 ** (-4.374 - x0))) // ((sign(abs(x1)) atan2 x2) // max(x1, x0))))
+Final Fitness: 0.195049
+Execution Time: 406.00 seconds
+Generations: 500
+==================================================
 Performance Metrics:
-Mean Squared Error: 23053582115224.644531
-R² Score: 0.221526 (22.2% of variance explained)
+Mean Squared Error: 20783913855133.996094
+R² Score: 0.298168 (29.8% of variance explained)
+==================================================
 
 # Problem_3
 Best Expression Found: 
@@ -41,26 +49,35 @@ Mean Squared Error: 97.311628
 R² Score: 0.962010 (96.2% of variance explained)
 
 # Problem_4
-params = GeneticParams(
+if params is None:
+        params = GeneticParams(
             tournament_size=7,
-            mutation_prob=0.4,
-            crossover_prob=0.7,
-            elitism_count=10,
-            population_size=1000,
+            mutation_prob=0.6,
+            crossover_prob=0.8,
+            elitism_count=8,
+            population_size=1200,
             generations=500,
-            max_depth=5,
-            min_depth=2,
+            maximum_tree_depth=7,
+            minimum_tree_depth=2,
+            depth_penalty_threshold=5,  # Depth at which penalties start
+            max_tree_size=15,
+            size_penalty_threshold=5,  # Size at which penalties start
+            parsimony_coefficient=0.1,  # Controls size penalty weight
+            unused_var_coefficient=0.5,  # Coefficient for unused variable penalty
         )
 
-Best Expression Found: sinh(reciprocal((cos(|(((x1 / x1) * sinh((x0 // x0))) + x1) - x1|) % reciprocal(cos(x1)))))
-Final Fitness: 0.218486
-Execution Time: 433.11 seconds
+==================================================
+==== SYMBOLIC REGRESSION RESULTS - problem_4 =====
+==================================================
+Best Expression Found: (sinh((log(3.237) * (cos(x0) - (x0 // x0)))) + exp(|cos(x0) - reciprocal(-0.727)|))
+Final Fitness: 0.831752
+Execution Time: 471.78 seconds
 Generations: 500
 ==================================================
-
 Performance Metrics:
-Mean Squared Error: 3.557946
-R² Score: 0.835448 (83.5% of variance explained)
+Mean Squared Error: 0.307729
+R² Score: 0.985768 (98.6% of variance explained)
+==================================================
 
 # Problem_5
 Best Expression Found: 
@@ -73,26 +90,35 @@ Mean Squared Error: 0.000000
 R² Score: -0.064122 (-6.4% of variance explained)
 
 # Problem_6
-params = GeneticParams(
+if params is None:
+        params = GeneticParams(
             tournament_size=7,
             mutation_prob=0.4,
             crossover_prob=0.7,
-            elitism_count=10,
-            population_size=1000,
+            elitism_count=20,
+            population_size=1200,
             generations=500,
-            max_depth=5,
-            min_depth=2,
+            maximum_tree_depth=5,
+            minimum_tree_depth=2,
+            depth_penalty_threshold=5,  # Depth at which penalties start
+            max_tree_size=15,
+            size_penalty_threshold=5,  # Size at which penalties start
+            parsimony_coefficient=0.1,  # Controls size penalty weight
+            unused_var_coefficient=0.5,  # Coefficient for unused variable penalty
         )
 
-Best Expression Found: (x1 + (x1 - max((x0 - abs(max(log((x1 - x0)), |x1 - x1|))), min(sqrt(x0), (x1 + x0)))))
-Final Fitness: 0.940143
-Execution Time: 355.58 seconds
+==================================================
+==== SYMBOLIC REGRESSION RESULTS - problem_6 =====
+==================================================
+Best Expression Found: (x1 + (sqrt(cot(log2(2.177))) * (sqrt(-4.419) + (x1 - x0))))
+Final Fitness: 0.95037
+Execution Time: 165.57 seconds
 Generations: 500
 ==================================================
-
 Performance Metrics:
-Mean Squared Error: 0.041668
-R² Score: 0.996947 (99.7% of variance explained)
+Mean Squared Error: 0.000020
+R² Score: 0.999999 (100.0% of variance explained)
+==================================================
 
 # Problem_7
 Best Expression Found: 
@@ -107,21 +133,29 @@ R² Score: 0.861201 (86.1% of variance explained)
 # Problem_8
 params = GeneticParams(
             tournament_size=7,
-            mutation_prob=0.4,
+            mutation_prob=0.8,
             crossover_prob=0.7,
             elitism_count=8,
             population_size=1000,
             generations=300,
-            max_depth=5,
-            min_depth=2,
+            maximum_tree_depth=7,
+            minimum_tree_depth=2,
+            depth_penalty_threshold=5,  # Depth at which penalties start
+            max_tree_size=15,
+            size_penalty_threshold=5,  # Size at which penalties start
+            parsimony_coefficient=0.1,  # Controls size penalty weight
+            unused_var_coefficient=0.9,  # Coefficient for unused variable penalty
         )
 
-Best Expression Found: (((x5 * cosh((arcsin(x5) * x5))) // sqrt(exp((cos(max(min(reciprocal(max((x3 ** cos(x1)), min(x0, x0))), min(x4, x2)), abs(x5))) // sigmoid(sqrt((x5 // abs(x4)))))))) + sinh((x5 + x5)))
-Final Fitness: 8.44204e-07
-Execution Time: 3296.04 seconds
+==================================================
+==== SYMBOLIC REGRESSION RESULTS - problem_8 =====
+==================================================
+Best Expression Found: ((sinh(4.067) // exp(x5)) * -3.664)
+Final Fitness: 0.34403
+Execution Time: 707.74 seconds
 Generations: 300
 ==================================================
-
 Performance Metrics:
-Mean Squared Error: 1184546.231796
-R² Score: 0.947831 (94.8% of variance explained)
+Mean Squared Error: 10252071.589658
+R² Score: 0.548485 (54.8% of variance explained)
+==================================================

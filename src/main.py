@@ -18,6 +18,7 @@ from symb_regression.utils.plotting import (
     plot_evolution_metrics,
     plot_expression_tree,
     plot_prediction_analysis,
+    plot_3d_data
 )
 from symb_regression.utils.random import set_global_seed
 
@@ -54,10 +55,10 @@ def run_symbolic_regression(
         params = GeneticParams(
             tournament_size=7,
             mutation_prob=0.6,
-            crossover_prob=0.9,
-            elitism_count=7,
-            population_size=1000,
-            generations=300,
+            crossover_prob=0.8,
+            elitism_count=6,
+            population_size=1200,
+            generations=500,
             maximum_tree_depth=7,
             minimum_tree_depth=2,
             depth_penalty_threshold=5,  # Depth at which penalties start
@@ -100,8 +101,9 @@ def run_symbolic_regression(
         _, axs = plt.subplots(1, 2, figsize=(12, 6))
         plot_evolution_metrics(history, ax=axs[0])
 
-        mse, r2 = calculate_score(best_solution, x, y)
-        plot_evolution_metrics(history, ax=axs[0])
+        mse, r2 = plot_prediction_analysis(best_solution, x, y, ax=axs[1])
+        r2, mse = calculate_score(best_solution, x, y)
+
         plt.tight_layout()
         plt.show()
 
@@ -109,7 +111,7 @@ def run_symbolic_regression(
         print(f"Mean Squared Error: {mse:.6f}")
         print(f"R² Score: {r2:.6f} ({r2*100:.1f}% of variance explained)")
         print_section_footer()
-        # plot_expression_tree(best_solution)
+        plot_expression_tree(best_solution)
 
         return best_solution, history
 
@@ -129,4 +131,5 @@ x, y = load_data(DATA_DIR, PROBLEM, show_stats=True)
 x_train, x_val, y_train, y_val = split_data(x, y, train_size=0.1)
 print("Done")
 # Run symbolic regression
-run_symbolic_regression(x, y, play_sound=True)
+run_symbolic_regression(x[:, 1].reshape(-1, 1), y, play_sound=True)
+plot_3d_data(x,y)

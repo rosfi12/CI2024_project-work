@@ -176,7 +176,7 @@ def plot_expression_tree(root_node):
     labels = {}
     for n in nodes_list:
         if n.op is not None:
-            labels[id(n)] = n.op
+            labels[id(n)] = str(n.op)
         elif n.value is not None:
             labels[id(n)] = str(n.value)
         else:
