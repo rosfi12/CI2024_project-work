@@ -21,15 +21,9 @@ def plot(x: np.ndarray, y: np.ndarray, best_solution: Node, history: List[Metric
 def plot_evolution_metrics(metrics_history: List[Any], ax=None) -> None:
     """Plot metrics related to the evolution process."""
     generations = [m.generation for m in metrics_history]
-    # max_gen = max(generations)
     best_fitness = [m.best_fitness for m in metrics_history]
     best_gen = generations[np.argmax(best_fitness)]
-    # quarter_gens = [int(max_gen * x) for x in [0, 0.25, 0.5, 0.75, 1.0]]
 
-    # fig = plt.figure(figsize=(15, 10))
-
-    # 1. Fitness Evolution (top left)
-    # plt = plt.subplot(221)
     if ax is None:
         ax = plt.gca()
 
@@ -78,7 +72,6 @@ def plot_prediction_analysis(
     )
 
     # Create figure
-    # fig, (plt, ax2) = plt.subplots(1, 2, figsize=(15, 5))
     if ax is None:
         ax = plt.gca()
 
@@ -205,6 +198,14 @@ def plot_3d(
     show_stats: bool = False,
 ) -> None:
     """Plot regression data with debug information."""
+    if x.shape[1] > 2:
+        print(
+            "Warning: Input data has more than 2 dimensions. Only first 2 will be used."
+        )
+        x = x[:, :2]
+    if x.shape[1] < 2:
+        print("Warning: Input data has less than 2 dimensions. Cannot plot 3D graph.")
+        return
 
     if show_stats:
         print("Raw data inspection:")
@@ -252,6 +253,11 @@ def plot_regression_data(
 ) -> None:
     """Plot regression data with improved 3D visualization."""
     fig = plt.figure(figsize=(10, 8))
+    if x.ndim > 1:
+        print(
+            "Warning: Input data has more than 2 dimensions. Only first 2 will be used."
+        )
+        x = x[:, :2]
 
     match x.shape[1]:
         case 1:

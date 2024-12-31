@@ -99,17 +99,16 @@ def split_data(
         )
 
     # Create random permutation using numpy
-    idx = np.random.permutation(n_samples)
+    idx: npt.NDArray[np.long] = np.random.permutation(n_samples)
     train_size_int = int(n_samples * train_size)
 
-    # Use advanced indexing instead of multiple array creations
-    mask = np.zeros(n_samples, dtype=bool)
+    mask: npt.NDArray = np.zeros(n_samples, dtype=bool)
     mask[idx[:train_size_int]] = True
 
-    x_train = x[mask]
-    y_train = y[mask]
-    x_val = x[~mask]
-    y_val = y[~mask]
+    x_train: npt.NDArray[np.float64] = x[mask]
+    y_train: npt.NDArray[np.float64] = y[mask]
+    x_val: npt.NDArray[np.float64] = x[~mask]
+    y_val: npt.NDArray[np.float64] = y[~mask]
 
     return x_train, x_val, y_train, y_val
 
@@ -127,14 +126,17 @@ def sort_and_filter_data(
     """
     # Ensure valid column index
     if sort_column >= x.shape[1]:
-        raise ValueError(f"sort_column {sort_column} exceeds x dimensions {x.shape[1]}")
+        print(
+            f"sort_column {sort_column} exceeds x dimensions {x.shape[1]}. No sorting applied."
+        )
+        return x, y
 
     # Simple sort by specified column
     sort_idx = np.argsort(x[:, sort_column])
 
     # Apply sorting
-    x_sorted = x[sort_idx]
-    y_sorted = y[sort_idx]
+    x_sorted: npt.NDArray[np.float64] = x[sort_idx]
+    y_sorted: npt.NDArray[np.float64] = y[sort_idx]
 
     if show_stats:
         print("Before filtering:")
@@ -143,18 +145,18 @@ def sort_and_filter_data(
     # Apply range filtering if specified
     if range_limit is not None:
         # Create mask for both columns within range
-        mask = np.ones(len(x_sorted), dtype=bool)
+        mask: npt.NDArray[np.bool] = np.ones(len(x_sorted), dtype=bool)
         for col in range(x_sorted.shape[1]):
             if from_end:
-                max_val = np.max(x_sorted[:, col])
-                min_val = max_val - range_limit
+                max_val: np.float64 = np.max(x_sorted[:, col])
+                min_val: np.float64 = max_val - range_limit
                 col_mask = (x_sorted[:, col] >= min_val) & (x_sorted[:, col] <= max_val)
             else:
                 col_mask = (x_sorted[:, col] >= 0) & (x_sorted[:, col] <= range_limit)
             mask = mask & col_mask
 
-        x_filtered = x_sorted[mask]
-        y_filtered = y_sorted[mask]
+        x_filtered: npt.NDArray[np.float64] = x_sorted[mask]
+        y_filtered: npt.NDArray[np.float64] = y_sorted[mask]
 
         if show_stats:
             print("\nAfter filtering:")
