@@ -2,7 +2,7 @@
     name = "ci-project"
     version = "0.1.0"
     description = "Computational Intelligence Project"
-    authors = ["Nicolò Taormina"]
+    authors = ["Rosamaria Fiata, Nicolò Taormina"]
     license = "MIT"
     readme = "README.md"
     package-mode = false

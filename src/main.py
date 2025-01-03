@@ -15,8 +15,11 @@ from symb_regression.core import GeneticProgram
 from symb_regression.core.tree import Node
 from symb_regression.utils.data_handler import load_data, sort_and_filter_data
 from symb_regression.utils.metrics import Metrics, calculate_score
+from symb_regression.utils.random import set_global_seed
 from symb_regression.utils.plotting import (
+    plot,
     plot_3d,
+    plot_regression_data,
     plot_evolution_metrics,
     plot_expression_tree,
     plot_prediction_analysis,
@@ -142,7 +145,7 @@ if __name__ == "__main__":
     # Load and process data
     PROBLEM_DIR = os.getcwd()
     DATA_DIR = os.path.join(PROBLEM_DIR, "data")
-    PROBLEM = "problem_1"
+    PROBLEM = "problem_2"
     x, y = load_data(DATA_DIR, PROBLEM, show_stats=True)
 
     plot_3d(x, y)
