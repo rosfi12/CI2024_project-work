@@ -8,22 +8,19 @@ from logging import Logger
 from typing import List
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 from symb_regression.config import GeneticParams
 from symb_regression.core import GeneticProgram
 from symb_regression.core.tree import Node
 from symb_regression.utils.data_handler import load_data, sort_and_filter_data
-from symb_regression.utils.metrics import Metrics
+from symb_regression.utils.metrics import Metrics, calculate_score
 from symb_regression.utils.plotting import (
-    plot,
     plot_3d,
     plot_evolution_metrics,
     plot_expression_tree,
     plot_prediction_analysis,
-    plot_regression_data,
-    plot_3d_data
 )
-from symb_regression.utils.random import set_global_seed
 
 
 def save_and_print(message: str, file_handle) -> None:
@@ -151,4 +148,4 @@ plot_3d(x, y)
 # raise
 # Run symbolic regression
 run_symbolic_regression(x[:, 1].reshape(-1, 1), y, play_sound=True)
-plot_3d_data(x,y)
+
