@@ -17,13 +17,9 @@ from symb_regression.utils.data_handler import load_data, sort_and_filter_data
 from symb_regression.utils.metrics import Metrics, calculate_score
 from symb_regression.utils.plotting import (
     plot_3d,
-<<<<<<< HEAD
     plot_evolution_metrics,
     plot_expression_tree,
     plot_prediction_analysis,
-=======
-    plot_regression_data,
->>>>>>> 1f2aa69c018bd9c1975076bd6776ea0c8ec6c8fe
 )
 
 
@@ -151,12 +147,7 @@ if __name__ == "__main__":
 
     plot_3d(x, y)
 
-<<<<<<< HEAD
 # raise
 # Run symbolic regression
 run_symbolic_regression(x[:, 1].reshape(-1, 1), y, play_sound=True)
 
-=======
-    # Run symbolic regression
-    run_symbolic_regression(x, y, play_sound=True)
->>>>>>> 1f2aa69c018bd9c1975076bd6776ea0c8ec6c8fe
