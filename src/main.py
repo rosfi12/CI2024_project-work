@@ -8,22 +8,18 @@ from logging import Logger
 from typing import List
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from symb_regression.config import GeneticParams
 from symb_regression.core import GeneticProgram
 from symb_regression.core.tree import Node
-from symb_regression.utils.data_handler import load_data, sort_and_filter_data
-from symb_regression.utils.metrics import Metrics, calculate_score
-from symb_regression.utils.random import set_global_seed
+from symb_regression.utils.data_handler import load_data
+from symb_regression.utils.metrics import Metrics
 from symb_regression.utils.plotting import (
     plot,
     plot_3d,
     plot_regression_data,
-    plot_evolution_metrics,
-    plot_expression_tree,
-    plot_prediction_analysis,
 )
+from symb_regression.utils.random import set_global_seed
 
 
 def save_and_print(message: str, file_handle) -> None:
@@ -75,7 +71,7 @@ def run_symbolic_regression(
             mutation_prob=0.9,
             crossover_prob=0.9,
             elitism_count=5,
-            population_size=1000,
+            population_size=500,
             generations=300,
             minimum_tree_depth=3,
             depth_penalty_threshold=7,  # Depth at which penalties start
@@ -145,12 +141,10 @@ if __name__ == "__main__":
     # Load and process data
     PROBLEM_DIR = os.getcwd()
     DATA_DIR = os.path.join(PROBLEM_DIR, "data")
-    PROBLEM = "problem_2"
+    PROBLEM = "problem_1"
     x, y = load_data(DATA_DIR, PROBLEM, show_stats=True)
 
     plot_3d(x, y)
 
-# raise
-# Run symbolic regression
-run_symbolic_regression(x[:, 1].reshape(-1, 1), y, play_sound=True)
-
+    # Run symbolic regression
+    run_symbolic_regression(x, y, play_sound=True)

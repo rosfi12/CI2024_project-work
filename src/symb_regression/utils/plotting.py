@@ -11,9 +11,18 @@ from symb_regression.utils.metrics import Metrics
 
 def plot(x: np.ndarray, y: np.ndarray, best_solution: Node, history: List[Metrics]):
     _, axs = plt.subplots(1, 2, figsize=(12, 6))
+
+    plt.subplots_adjust(
+        left=0.08,
+        right=0.95,
+        bottom=0.1,
+        top=0.9,
+        wspace=0.25,
+    )
+
     plot_evolution_metrics(history, ax=axs[0])
     plot_prediction_analysis(best_solution, x, y, ax=axs[1])
-    plt.tight_layout()
+    # plt.tight_layout()
     plt.show()
     plot_expression_tree(best_solution)
 
@@ -107,13 +116,13 @@ def plot_prediction_analysis(
     return mse, r2
 
 
-def plot_expression_tree(root_node):
+def plot_expression_tree(root_node: Node) -> None:
     import matplotlib.pyplot as plt
 
     G = nx.DiGraph()
     nodes_list = []
 
-    def collect_nodes(node, parent_id=None):
+    def collect_nodes(node, parent_id=None) -> None:
         current_id = id(node)
         nodes_list.append(node)
 
@@ -182,6 +191,8 @@ def plot_expression_tree(root_node):
             labels[id(n)] = str(n.op)
         elif n.value is not None:
             labels[id(n)] = str(n.value)
+        elif n.variable_idx is not None:
+            labels[id(n)] = f"x{n.variable_idx}"
         else:
             labels[id(n)] = "None"
 
